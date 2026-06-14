@@ -1,0 +1,2718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Utopian Adventure Park 🌈</title>
+<!-- Google Analytics (GA4) — consent-gated: only loads after the visitor agrees -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  function loadGA(){
+    if (window.__gaLoaded) return; window.__gaLoaded = true;
+    var s = document.createElement('script'); s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-XHHXS8SEZ8';
+    document.head.appendChild(s);
+    gtag('js', new Date());
+    gtag('config', 'G-XHHXS8SEZ8', { anonymize_ip: true });
+  }
+  try { if (localStorage.getItem('ua_consent') === 'yes') loadGA(); } catch (e) {}
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: #1d2230;
+    color: #e8ecf3;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  #app { display: flex; height: 100%; }
+
+  /* ---- Left sidebar (toolbar) ---- */
+  #sidebar {
+    width: 196px;
+    background: #252b3b;
+    border-right: 1px solid #333b4f;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    gap: 4px;
+    overflow-y: auto;
+  }
+  #sidebar h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7d8aa5;
+    margin: 9px 2px 2px;
+  }
+  .tool {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 9px;
+    background: #2e3650;
+    border: 1px solid #3a435f;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background .12s, border-color .12s;
+  }
+  .tool:hover { background: #38416180; }
+  .tool .ico { font-size: 17px; width: 22px; text-align: center; }
+  .tool .meta { margin-left: auto; font-size: 10px; color: #95a0bd; }
+  .tool .sz { font-size: 9px; color: #6f7b95; margin-left: 4px; }
+  .tool.active { background: #3d6bff33; border-color: #4f7dff; box-shadow: 0 0 0 1px #4f7dff inset; }
+  .tool.locked { opacity: .5; cursor: not-allowed; filter: grayscale(.6); }
+  .tool.locked .meta { color: #ffb74d; }
+
+  /* ---- Main area ---- */
+  #main { flex: 1; position: relative; display: flex; flex-direction: column; }
+  #hud {
+    height: 50px;
+    background: #20283a;
+    border-bottom: 1px solid #333b4f;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+  .stat { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .stat b { font-variant-numeric: tabular-nums; }
+  .stat .lbl { color: #8893ac; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  #cash.neg { color: #ff6b6b; }
+  #level-wrap { display: flex; flex-direction: column; gap: 3px; min-width: 130px; }
+  #level-wrap .top { display: flex; justify-content: space-between; font-size: 11px; }
+  #level-wrap .top .lbl { color: #8893ac; text-transform: uppercase; letter-spacing: .5px; }
+  #level-wrap .top .nx { color: #95a0bd; }
+  #lvl-track { height: 6px; background: #0c0f17; border-radius: 4px; overflow: hidden; }
+  #lvl-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#4f7dff,#7bd0ff); transition: width .3s; }
+  #speed-controls { margin-left: auto; display: flex; gap: 4px; }
+  .spd {
+    background: #2e3650; border: 1px solid #3a435f; color: #cfd6e6;
+    border-radius: 6px; padding: 4px 9px; cursor: pointer; font-size: 12px;
+  }
+  .spd.active { background: #4f7dff; border-color: #4f7dff; color: #fff; }
+  #cheat-btn { background: #5b3da8; border-color: #6f4ad0; }
+  #sound-btn.muted { opacity: .5; }
+
+  #canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #245f33; touch-action: none; }
+  canvas { display: block; }
+  #game { position: absolute; top: 0; left: 0; transform-origin: 0 0; cursor: crosshair; touch-action: none; }
+
+  /* ---- Toast / messages ---- */
+  #toasts {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; gap: 6px; align-items: center;
+    pointer-events: none; z-index: 30;
+  }
+  .toast {
+    background: #11151fdd; border: 1px solid #3a435f; padding: 7px 14px;
+    border-radius: 20px; font-size: 13px; animation: fade 3.4s forwards; max-width: 360px; text-align: center;
+  }
+  .toast.big { background: #2a1d52ee; border-color: #7b5bd0; font-size: 14px; }
+  @keyframes fade { 0%{opacity:0; transform:translateY(-6px);} 8%,82%{opacity:1; transform:none;} 100%{opacity:0;} }
+
+  /* ---- Cheat console ---- */
+  #cheat-console {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #11141ce6; border-top: 1px solid #6f4ad0;
+    padding: 10px 14px; display: none; z-index: 40;
+  }
+  #cheat-console.open { display: block; }
+  #cheat-console .row { display: flex; gap: 8px; align-items: center; }
+  #cheat-input {
+    flex: 1; background: #0c0f17; border: 1px solid #3a435f; color: #b9ffd0;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px;
+    padding: 8px 10px; border-radius: 6px; letter-spacing: 1px; outline: none;
+  }
+  #cheat-console .hint { color: #8893ac; font-size: 11px; margin-top: 6px; }
+  #cheat-console .hint code { color: #c9a6ff; }
+
+  #help {
+    position: absolute; bottom: 38px; left: 12px; font-size: 11px;
+    color: #ffffff99; background: #0009; padding: 6px 10px; border-radius: 6px;
+    pointer-events: none; z-index: 20; line-height: 1.5;
+  }
+  #tooltip {
+    position: absolute; pointer-events: none; z-index: 25; display: none;
+    background: #0c0f17f2; border: 1px solid #3a435f; border-radius: 6px;
+    padding: 7px 9px; font-size: 12px; max-width: 210px; line-height: 1.45; white-space: pre-line;
+  }
+
+  /* ---- Inspector panel ---- */
+  #inspector {
+    position: absolute; top: 12px; left: 12px; width: 220px; z-index: 28;
+    background: #161b28f2; border: 1px solid #3a435f; border-radius: 10px;
+    padding: 12px; display: none; box-shadow: 0 8px 28px #0007;
+    animation: pop .16s ease-out;
+  }
+  @keyframes pop { from{opacity:0; transform:scale(.92) translateY(-4px);} to{opacity:1; transform:none;} }
+  #inspector h3 { font-size: 14px; display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+  #inspector .sub { font-size: 11px; color: #8893ac; margin-bottom: 8px; }
+  #inspector .close { position: absolute; top: 8px; right: 10px; cursor: pointer; color: #8893ac; font-size: 16px; line-height: 1; }
+  #inspector .close:hover { color: #fff; }
+  .bar { margin: 4px 0; font-size: 11px; }
+  .bar .row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #aeb8cf; }
+  .bar .track { height: 6px; background: #0c0f17; border-radius: 4px; overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 4px; transition: width .25s, background .25s; }
+  #inspector .thought {
+    margin-top: 9px; padding: 7px 9px; background: #0c0f17; border-radius: 8px;
+    font-size: 12px; font-style: italic; color: #d7deec; min-height: 16px;
+  }
+  #inspector .kv { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+  #inspector .kv b { color: #9be07a; }
+  #inspector .pricer { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; }
+  #inspector .pricer button {
+    width: 26px; height: 24px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    background: #2e3650; border: 1px solid #3a435f; color: #cfd6e6;
+  }
+  #inspector .pricer button:hover { background: #384161; }
+  #inspector .pricer .val { flex: 1; text-align: center; font-weight: bold; color: #ffd166; }
+  #inspector .demolish {
+    margin-top: 10px; width: 100%; padding: 7px; cursor: pointer; font-size: 12px;
+    background: #5a1f22; border: 1px solid #8a3a3e; color: #ffd2d2; border-radius: 7px;
+  }
+  #inspector .demolish:hover { background: #732428; }
+  .tag { display:inline-block; font-size:10px; padding:1px 6px; border-radius:10px; margin-right:4px; }
+  .tag.gentle { background:#1f5132; color:#9be0b0; }
+  .tag.moderate { background:#5a4a1f; color:#ffe08a; }
+  .tag.thrill { background:#5a1f2a; color:#ff9bb0; }
+
+  /* ---- Modal (Staff / Marketing) ---- */
+  #modal-overlay {
+    position: absolute; inset: 0; background: #0b0e16cc; z-index: 50;
+    display: none; align-items: center; justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal {
+    width: 540px; max-width: 92%; max-height: 86%; overflow-y: auto;
+    background: #1a2030; border: 1px solid #3a435f; border-radius: 14px;
+    padding: 18px 20px; box-shadow: 0 16px 50px #000a; animation: pop .16s ease-out;
+  }
+  #modal h2 { font-size: 18px; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  #modal .modal-sub { color: #8893ac; font-size: 12px; margin-bottom: 14px; }
+  #modal .mclose { float: right; cursor: pointer; color: #8893ac; font-size: 20px; line-height: 1; }
+  #modal .mclose:hover { color: #fff; }
+  #modal h3.sect { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #7d8aa5; margin: 16px 0 8px; }
+  .card {
+    display: flex; align-items: center; gap: 11px; padding: 10px 12px; margin-bottom: 7px;
+    background: #232b3d; border: 1px solid #333d54; border-radius: 9px;
+  }
+  .card.on { border-color: #5bd98a; box-shadow: 0 0 0 1px #5bd98a44 inset; }
+  .card.active-camp { border-color: #ffd166; box-shadow: 0 0 0 1px #ffd16644 inset; }
+  .card .cico { font-size: 26px; width: 34px; text-align: center; }
+  .card .cmain { flex: 1; }
+  .card .cmain .ct { font-size: 14px; font-weight: 600; }
+  .card .cmain .cd { font-size: 11px; color: #95a0bd; line-height: 1.4; margin-top: 2px; }
+  .card .cbtn {
+    padding: 7px 13px; border-radius: 7px; cursor: pointer; font-size: 13px; white-space: nowrap;
+    background: #3d6bff; border: 1px solid #4f7dff; color: #fff;
+  }
+  .card .cbtn:hover { filter: brightness(1.12); }
+  .card .cbtn.danger { background: #5a1f22; border-color: #8a3a3e; color: #ffd2d2; }
+  .card .cbtn.ghost { background: #2e3650; border-color: #3a435f; color: #cfd6e6; }
+  .card .cbtn.disabled { opacity: .45; pointer-events: none; }
+  .card .cnt { font-size: 13px; color: #9be07a; min-width: 22px; text-align: center; }
+
+  /* ---- Ledger ---- */
+  .ledger-cols { display: flex; gap: 16px; }
+  .ledger-col { flex: 1; }
+  .ledger-col .kv { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; }
+  .ledger-col.income .kv b { color: #9be07a; }
+  .ledger-col.expense .kv b { color: #ff9b9b; }
+  .ledger-col .kv.total { border-top: 1px solid #3a435f; margin-top: 8px; padding-top: 6px; font-weight: 600; }
+  .ledger-col .kv.total b { color: #fff; }
+  #modal .kv.net { margin-top: 14px; padding: 10px 12px; background: #232b3d; border-radius: 9px; font-size: 15px; display: flex; justify-content: space-between; }
+  #modal .kv.net.pos b { color: #5bd98a; }
+  #modal .kv.net.neg b { color: #ff6b6b; }
+
+  /* ---- Right-side stacked panels (moods dashboard + legend) ---- */
+  #side-panels {
+    position: absolute; top: 12px; right: 12px; z-index: 27; width: 182px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #moods, #legend, #advisor {
+    background: #161b28f0; border: 1px solid #3a435f; border-radius: 10px;
+    font-size: 11px; box-shadow: 0 6px 22px #0006; overflow: hidden;
+  }
+  #advisor { width: 100%; }
+  #advisor .lhead { background: #2a2440; border-bottom-color: #3a3358; }
+  #advisor-body { padding: 6px 8px 8px; max-height: 40vh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  .arow {
+    display: flex; gap: 7px; align-items: flex-start; padding: 5px 7px; border-radius: 6px;
+    background: #0e121c; border-left: 3px solid #4f7dff; font-size: 11px; line-height: 1.35;
+  }
+  .arow.warn { border-left-color: #ffb74d; }
+  .arow.bad  { border-left-color: #ff5b5b; }
+  .arow .ae { font-size: 14px; flex: none; }
+  .arow .at { color: #dbe2f0; }
+  #moods .lhead { border-bottom-color: #2c3550; }
+  #moods-sub { margin-left: auto; margin-right: 8px; color: #8893ac; font-size: 10px; font-weight: 400; }
+  #moods-body { padding: 6px 8px 8px; max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .mrow {
+    position: relative; display: flex; align-items: center; gap: 7px;
+    padding: 3px 7px; border-radius: 5px; background: #0e121c; overflow: hidden;
+  }
+  .mrow .mfill { position: absolute; left: 0; top: 0; bottom: 0; opacity: .30; border-radius: 5px; transition: width .4s; }
+  .mrow .le { position: relative; z-index: 1; font-size: 14px; width: 18px; text-align: center; }
+  .mrow .lt { position: relative; z-index: 1; color: #e2e8f4; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mrow .mn { position: relative; z-index: 1; color: #fff; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* ---- Emotions legend ---- */
+  #legend {
+    width: 100%;
+  }
+  .lhead {
+    display: flex; align-items: center; gap: 6px; padding: 7px 10px; cursor: pointer;
+    font-size: 12px; font-weight: 600; background: #1f2738; border-bottom: 1px solid #2c3550;
+  }
+  .lhead .chev { margin-left: auto; color: #8893ac; transition: transform .15s; }
+  .collapsed .lhead .chev { transform: rotate(-90deg); }
+  .collapsed .lbody { display: none; }
+  #legend .lbody { padding: 6px 10px 8px; max-height: 60vh; overflow-y: auto; }
+  #legend .lsec { color: #7d8aa5; text-transform: uppercase; letter-spacing: .5px; font-size: 9px; margin: 6px 0 3px; }
+  #legend .lrow { display: flex; align-items: center; gap: 7px; padding: 1px 0; line-height: 1.5; }
+  #legend .lrow .le { font-size: 14px; width: 18px; text-align: center; }
+  #legend .lrow .lt { color: #cfd6e6; }
+
+  #reputation { color: #ffd166; letter-spacing: 1px; }
+
+  /* ---- News ticker (bottom bar) ---- */
+  #ticker {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 30px; z-index: 22;
+    background: #11151fe8; border-top: 1px solid #333b4f; display: flex; align-items: center;
+    gap: 10px; padding: 0 12px; font-size: 13px; overflow: hidden; white-space: nowrap;
+  }
+  #ticker .badge { background: #b3242f; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 2px 7px; border-radius: 4px; flex: none; }
+  #ticker-text { color: #e8ecf3; overflow: hidden; text-overflow: ellipsis; }
+  #ticker-text.slide { animation: slidein .5s ease-out; }
+  @keyframes slidein { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+
+  /* ---- On-screen zoom controls (touch + mouse) ---- */
+  #zoom-controls {
+    position: absolute; right: 10px; bottom: 40px; z-index: 24;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  #zoom-controls button {
+    width: 40px; height: 40px; border-radius: 9px; cursor: pointer; font-size: 20px; line-height: 1;
+    background: #20283acc; border: 1px solid #3a435f; color: #e8ecf3; backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #zoom-controls button:active { background: #4f7dff; }
+
+  /* ---- Responsive / touch layout ---- */
+  @media (max-width: 900px), (pointer: coarse) {
+    #sidebar { width: 138px; padding: 6px; gap: 3px; }
+    #sidebar h2 { font-size: 10px; margin: 6px 2px 1px; }
+    .tool { padding: 8px 7px; font-size: 12px; }
+    .tool .ico { font-size: 16px; width: 18px; }
+    .tool .meta { font-size: 9px; }
+    .tool .sz { display: none; }
+    #hud { height: auto; flex-wrap: wrap; gap: 5px 12px; padding: 6px 10px; font-size: 13px; }
+    .stat .lbl { display: none; }
+    #level-wrap { min-width: 96px; }
+    #speed-controls { gap: 5px; }
+    .spd { padding: 7px 10px; font-size: 13px; }
+    #side-panels { width: 150px; top: 8px; right: 8px; }
+    #moods-body, #advisor-body { max-height: 30vh; }
+    #help { display: none; }
+    #inspector { width: 188px; top: 8px; left: 8px; }
+    #zoom-controls button { width: 46px; height: 46px; font-size: 22px; }
+  }
+
+  /* ===== Mobile template (landscape-optimised) — bottom build bar, top HUD,
+     toggleable info panels, hidden ticker. Applied via body.mobile (touch only). ===== */
+  body.mobile #app { flex-direction: column; }
+  body.mobile #main { order: 1; flex: 1; min-height: 0; }
+  body.mobile #sidebar {
+    order: 2; width: 100%; height: 86px; flex-direction: row; align-items: stretch;
+    gap: 6px; padding: 5px 8px; overflow-x: auto; overflow-y: hidden;
+    border-right: none; border-top: 1px solid #333b4f; -webkit-overflow-scrolling: touch;
+  }
+  body.mobile #tools { display: contents; }                 /* let chips flow into the bar */
+  body.mobile #sidebar h2 {
+    writing-mode: vertical-rl; transform: rotate(180deg); font-size: 8px;
+    margin: 0; padding: 0 1px; align-self: center; flex: none; color: #6f7b95;
+  }
+  body.mobile .tool {
+    flex-direction: column; width: 56px; min-width: 56px; flex: none; gap: 1px;
+    padding: 4px 2px; justify-content: center; text-align: center; font-size: 8.5px; line-height: 1.05;
+  }
+  body.mobile .tool .ico { font-size: 21px; width: auto; }
+  body.mobile .tool .meta, body.mobile .tool .sz { display: none; }
+  body.mobile #hud { height: auto; flex-wrap: wrap; gap: 4px 10px; padding: 5px 8px; }
+  body.mobile #ticker, body.mobile #help { display: none; }
+  body.mobile #side-panels { display: none; }
+  body.mobile.show-panels #side-panels { display: flex; max-height: calc(100% - 130px); }
+  body.mobile #zoom-controls { bottom: 96px; }
+  #panels-btn { display: none; }
+  body.mobile #panels-btn { display: flex; }
+
+  /* cookie-consent banner */
+  #consent {
+    position: absolute; left: 0; right: 0; bottom: 30px; z-index: 70; display: none;
+    background: #11151ff5; border-top: 1px solid #4f7dff; padding: 9px 14px;
+    align-items: center; justify-content: center; gap: 10px; font-size: 12px; flex-wrap: wrap;
+  }
+  #consent button { padding: 6px 16px; border-radius: 7px; cursor: pointer; font-size: 12px; border: 1px solid #3a435f; }
+  #consent #consent-yes { background: #3d6bff; border-color: #4f7dff; color: #fff; }
+  #consent #consent-no { background: #2e3650; color: #cfd6e6; }
+  body.mobile #consent { bottom: 86px; }
+
+  /* portrait nudge to rotate */
+  #rotate-hint { display: none; }
+  body.mobile #rotate-hint {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 60;
+    background: #11151fee; border: 1px solid #4f7dff; border-radius: 22px; padding: 8px 14px;
+    font-size: 13px; align-items: center; gap: 10px; text-align: center; box-shadow: 0 6px 20px #0008;
+  }
+  body.mobile #rotate-hint .rx { cursor: pointer; color: #8893ac; font-size: 16px; }
+  @media (orientation: portrait) { body.mobile #rotate-hint { display: flex; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div id="tools"></div>
+    <h2>Manage</h2>
+    <div class="tool" id="staff-btn"><span class="ico">👷</span> Staff</div>
+    <div class="tool" id="marketing-btn"><span class="ico">📣</span> Marketing</div>
+    <div class="tool" id="ledger-btn"><span class="ico">💰</span> Ledger</div>
+    <h2>Game</h2>
+    <div class="tool" id="save-btn"><span class="ico">💾</span> Save</div>
+    <div class="tool" id="load-btn"><span class="ico">📂</span> Load</div>
+    <div class="tool" id="reset-btn"><span class="ico">🔄</span> New Park</div>
+  </div>
+
+  <div id="main">
+    <div id="hud">
+      <div class="stat" id="cash-stat" style="cursor:pointer" title="Open ledger"><span class="ico">💰</span><span class="lbl">Cash</span><b id="cash">$0</b></div>
+      <div class="stat"><span class="ico">🧍</span><span class="lbl">Guests</span><b id="guests">0</b></div>
+      <div class="stat"><span class="ico">⭐</span><span class="lbl">Rating</span><b id="rating">0</b></div>
+      <div class="stat" id="rep-stat"><span class="lbl">Reputation</span><b id="reputation">★★★★☆</b></div>
+      <div class="stat"><span class="ico">📅</span><span class="lbl">Day</span><b id="clock">1 · 09:00</b></div>
+      <div class="stat" id="weather-stat"><span class="lbl">Weather</span><b id="weather">☀️ Sunny</b></div>
+      <div id="level-wrap">
+        <div class="top"><span class="lbl">Level <b id="lvl-num">1</b></span><span class="nx" id="lvl-next"></span></div>
+        <div id="lvl-track"><div id="lvl-fill"></div></div>
+      </div>
+      <div id="speed-controls">
+        <button class="spd" data-speed="0">⏸</button>
+        <button class="spd active" data-speed="1">▶ 1x</button>
+        <button class="spd" data-speed="2">⏩ 2x</button>
+        <button class="spd" data-speed="5" id="spd5" style="display:none">⚡ 5x</button>
+        <button class="spd" id="sound-btn" title="Toggle sound">🔊</button>
+        <button class="spd" id="cookie-btn" title="Privacy &amp; cookies">🍪</button>
+        <button class="spd" id="cheat-btn">🎮 Cheats</button>
+      </div>
+    </div>
+
+    <div id="canvas-wrap">
+      <canvas id="game"></canvas>
+      <div id="toasts"></div>
+      <div id="tooltip"></div>
+      <div id="inspector"></div>
+      <div id="side-panels">
+      <div id="moods">
+        <div class="lhead" id="moods-head">📊 Guest Moods <span class="msub" id="moods-sub"></span><span class="chev">▾</span></div>
+        <div class="lbody" id="moods-body"></div>
+      </div>
+      <div id="advisor">
+        <div class="lhead" id="advisor-head">💡 Advisor <span class="msub" id="advisor-sub"></span><span class="chev">▾</span></div>
+        <div class="lbody" id="advisor-body"></div>
+      </div>
+      <div id="legend" class="collapsed">
+        <div class="lhead" id="legend-head">🙂 Mood legend <span class="chev">▾</span></div>
+        <div class="lbody">
+          <div class="lsec">Having fun</div>
+          <div class="lrow"><span class="le">🤩</span><span class="lt">Loved a ride</span></div>
+          <div class="lrow"><span class="le">😄</span><span class="lt">Had fun</span></div>
+          <div class="lrow"><span class="le">🥰</span><span class="lt">Loving the park</span></div>
+          <div class="lrow"><span class="le">😎</span><span class="lt">Cooled off (water)</span></div>
+          <div class="lrow"><span class="le">😋</span><span class="lt">Tasty snack</span></div>
+          <div class="lrow"><span class="le">🛍️</span><span class="lt">Went shopping</span></div>
+          <div class="lrow"><span class="le">📸</span><span class="lt">Photo taken</span></div>
+          <div class="lrow"><span class="le">😮‍💨</span><span class="lt">Used the restroom</span></div>
+          <div class="lsec">Wants something</div>
+          <div class="lrow"><span class="le">🤔</span><span class="lt">Deciding what to do</span></div>
+          <div class="lrow"><span class="le">😣</span><span class="lt">Hungry — needs food</span></div>
+          <div class="lrow"><span class="le">🥵</span><span class="lt">Thirsty — needs a drink</span></div>
+          <div class="lrow"><span class="le">🚽</span><span class="lt">Needs a restroom</span></div>
+          <div class="lrow"><span class="le">😴</span><span class="lt">Tired — needs a bench</span></div>
+          <div class="lrow"><span class="le">💵</span><span class="lt">Low on cash (ATM)</span></div>
+          <div class="lsec">Unhappy</div>
+          <div class="lrow"><span class="le">🤮</span><span class="lt">Feeling sick / nauseous</span></div>
+          <div class="lrow"><span class="le">😵</span><span class="lt">Ride too intense</span></div>
+          <div class="lrow"><span class="le">🤧</span><span class="lt">Area is too dirty</span></div>
+          <div class="lrow"><span class="le">😖</span><span class="lt">Too crowded</span></div>
+          <div class="lrow"><span class="le">😠</span><span class="lt">Generally unhappy</span></div>
+          <div class="lrow"><span class="le">😤</span><span class="lt">Annoyed (e.g. ride broke)</span></div>
+        </div>
+      </div>
+      </div>
+      <div id="help">
+        Pick a tool, then <b>click &amp; drag</b> to build. Big rides take several tiles — connect each to a <b>path</b>.<br>
+        <b>Scroll</b> to zoom · <b>middle-drag</b> / <b>arrow keys</b> to pan · <b>F</b> fits the park · <b>click a guest/ride</b> to inspect · <b>~</b> cheats.<br>
+        <span style="opacity:.7">ℹ️ Anonymous Google Analytics (opt out via 🍪) · your park saves stay on your device.</span>
+      </div>
+      <div id="zoom-controls">
+        <button id="panels-btn" title="Toggle info panels">📊</button>
+        <button id="zoom-in" title="Zoom in">＋</button>
+        <button id="zoom-out" title="Zoom out">－</button>
+        <button id="zoom-fit" title="Fit park">⤢</button>
+      </div>
+      <div id="rotate-hint">🔄 Rotate to landscape for a comfier view <span class="rx" id="rotate-x">✕</span></div>
+      <div id="consent">
+        <span>🍪 We use Google Analytics (anonymised) just to count visitors. You can change this anytime via the 🍪 button.</span>
+        <button id="consent-yes">Accept</button>
+        <button id="consent-no">Decline</button>
+      </div>
+      <div id="ticker"><span class="badge">📰 NEWS</span><span id="ticker-text">Welcome to your Utopian Adventure Park!</span></div>
+      <div id="modal-overlay"><div id="modal"></div></div>
+      <div id="cheat-console">
+        <div class="row">
+          <span style="color:#c9a6ff">cheat&gt;</span>
+          <input id="cheat-input" placeholder="type a code and press Enter…" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="hint">
+          Try: <code>MONEYBAGS</code> <code>RICHASF</code> <code>MAGICWAND</code>
+          <code>HAPPYDAYS</code> <code>PACKED</code> <code>MAXRATING</code>
+          <code>SPEEDDEMON</code> <code>UNLOCKALL</code> <code>LEVELUP</code> <code>RAINYDAY</code> <code>HEATWAVE</code> <code>STORM</code> <code>FIRE</code> <code>VIP</code> <code>FAMETIME</code> <code>BANKRUPT</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   ROLLER COASTER TYCOON — MINI  (multi-tile rides · levels · realism edition)
+   Sections: Config → State → Helpers → FX → Sound → Pathfinding → Guests
+             → Rides/Shops → Economy/Rating/Levels → Sim → Input → Cheats
+             → Render → Inspector → Save/Load → Boot
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   1. CONFIG / CONSTANTS
+---------------------------------------------------------------------------- */
+const TILE = 34;
+const COLS = 48;
+const ROWS = 32;
+const START_CASH = 6000;
+const ENTRY_FEE = 8;
+const TICK_MS = 100;            // real ms per sim tick
+const MINUTES_PER_TICK = 2;     // in-game minutes per tick at 1x
+
+const T = { GRASS: 0, PATH: 1, RIDE: 2, SHOP: 3, SCENERY: 4, ENTRANCE: 5 };
+
+// Lifetime admissions required to reach each level (index 0 = level 1).
+const LEVEL_REQ = [0, 25, 70, 140, 240, 380, 560, 800, 1100, 1500];
+function maxLevel() { return LEVEL_REQ.length; }
+
+// ---- Building catalogue -----------------------------------------------------
+// Rides/shops carry RCT-style ratings: excite, intensity, nausea (0-10).
+// w/h = footprint in tiles. level = park level at which it unlocks.
+// need: which guest need this satisfies ("fun" for thrill rides).
+const BUILDINGS = {
+  // paths & tools
+  path:     { kind: T.PATH,    name: "Path",         icon: "⬜", w:1,h:1, cost: 10,  refund: 5,  level: 1, tip: "Guests can only walk on paths. Build a network from the entrance." },
+  bridge:   { kind: T.PATH,    name: "Bridge",       icon: "🌉", w:1,h:1, cost: 25,  refund: 10, level: 2, bridge: true, tip: "A decorative wooden bridge — walkable like a path, looks great over scenery." },
+  bulldoze: { kind: -1,        name: "Bulldoze",     icon: "🧨", w:1,h:1, cost: 0,   level: 1, tip: "Remove a tile/building for a partial refund. (Right-click also works.)" },
+
+  // ---- RIDES ----
+  carousel: { kind:T.RIDE, name:"Carousel",      icon:"🎠", w:1,h:1, cost:600,  refund:240, upkeep:5,  level:1, need:"fun", price:6,  cap:6,  dur:5, excite:4, intensity:2, nausea:1, tip:"Gentle family classic." },
+  ferris:   { kind:T.RIDE, name:"Ferris Wheel",  icon:"🎡", w:2,h:2, cost:1300, refund:520, upkeep:8,  level:2, need:"fun", price:9,  cap:16, dur:8, excite:6, intensity:2, nausea:1, tip:"Big, scenic, high capacity." },
+  pirate:   { kind:T.RIDE, name:"Pirate Ship",   icon:"🚢", w:2,h:1, cost:1100, refund:440, upkeep:8,  level:3, need:"fun", price:9,  cap:12, dur:5, excite:6, intensity:6, nausea:5, tip:"Swinging thrills — a bit queasy-making." },
+  bumper:   { kind:T.RIDE, name:"Bumper Cars",   icon:"🚗", w:2,h:2, cost:1200, refund:480, upkeep:7,  level:3, need:"fun", price:8,  cap:10, dur:5, excite:5, intensity:4, nausea:2, tip:"Crash-'em-up fun for most ages." },
+  teacups:  { kind:T.RIDE, name:"Spinning Teacups",icon:"🫖",w:1,h:1, cost:700,  refund:280, upkeep:5,  level:4, need:"fun", price:6,  cap:8,  dur:4, excite:4, intensity:3, nausea:5, tip:"Spins fast — watch the nausea!" },
+  haunted:  { kind:T.RIDE, name:"Haunted House", icon:"👻", w:2,h:2, cost:1600, refund:640, upkeep:9,  level:4, need:"fun", price:11, cap:12, dur:7, excite:7, intensity:3, nausea:2, tip:"Spooky dark ride, broad appeal." },
+  logflume: { kind:T.RIDE, name:"Log Flume",     icon:"🛶", w:3,h:1, cost:1900, refund:760, upkeep:10, level:4, need:"fun", price:11, cap:10, dur:7, excite:7, intensity:5, nausea:3, tip:"Splashy water ride. Long footprint." },
+  gokarts:  { kind:T.RIDE, name:"Go-Karts",      icon:"🏎️", w:2,h:2, cost:2000, refund:800, upkeep:11, level:5, need:"fun", price:12, cap:8,  dur:6, excite:7, intensity:5, nausea:3, tip:"Race around the track!" },
+  droptower:{ kind:T.RIDE, name:"Drop Tower",    icon:"🪂", w:1,h:2, cost:2200, refund:880, upkeep:12, level:5, need:"fun", price:13, cap:8,  dur:4, excite:8, intensity:8, nausea:6, tip:"Stomach-dropping plunge. Thrill-seekers only." },
+  coaster:  { kind:T.RIDE, name:"Roller Coaster",icon:"🎢", w:3,h:2, cost:3200, refund:1280,upkeep:15, level:6, need:"fun", price:16, cap:16, dur:8, excite:9, intensity:7, nausea:5, tip:"The star attraction. Big and pricey." },
+  spacetower:{kind:T.RIDE, name:"Space Shot",    icon:"🚀", w:1,h:3, cost:4200, refund:1680,upkeep:18, level:7, need:"fun", price:20, cap:8,  dur:5, excite:10,intensity:9, nausea:7, tip:"Extreme launch ride. Not for the faint-hearted." },
+  helipad:  { kind:T.RIDE, name:"Helicopter Tour",icon:"🚁", w:2,h:2, cost:3600, refund:1440,upkeep:16, level:6, need:"fun", price:22, cap:6,  dur:7, excite:9, intensity:4, nausea:2, tip:"Scenic helipad ride — premium aerial tours over your park." },
+
+  // ---- WATER RIDES (cool guests down — great for hot, queasy visitors) ----
+  splashpad: { kind:T.RIDE, name:"Splash Pad",  icon:"💦", w:1,h:1, cost:650,  refund:260, upkeep:5,  level:2, need:"fun", price:6,  cap:10, dur:5, excite:4, intensity:1, nausea:0, cool:18, water:true, tip:"Cheap, refreshing fun for little kids. Cools guests off." },
+  wavepool:  { kind:T.RIDE, name:"Wave Pool",   icon:"🌊", w:2,h:2, cost:1700, refund:680, upkeep:10, level:3, need:"fun", price:10, cap:20, dur:7, excite:7, intensity:3, nausea:0, cool:30, water:true, tip:"Big splashy crowd-pleaser. Huge capacity, very cooling." },
+  waterslide:{ kind:T.RIDE, name:"Water Slide", icon:"🛝", w:1,h:2, cost:1900, refund:760, upkeep:11, level:4, need:"fun", price:11, cap:10, dur:5, excite:8, intensity:5, nausea:1, cool:26, water:true, tip:"Thrilling flumes — splashdown cools you right off." },
+  lazyriver: { kind:T.RIDE, name:"Lazy River",  icon:"🚣", w:3,h:1, cost:2100, refund:840, upkeep:9,  level:5, need:"fun", price:9,  cap:16, dur:9, excite:5, intensity:1, nausea:0, cool:34, water:true, tip:"Relaxing float. Restores energy & cools everyone down." },
+
+  // ---- ADVENTURE (outdoorsy, exploratory attractions) ----
+  balloon:  { kind:T.RIDE, name:"Hot Air Balloon",icon:"🎈", w:1,h:1, cost:850,  refund:340, upkeep:6,  level:2, need:"fun", price:9,  cap:6,  dur:8, excite:6, intensity:1, nausea:0, tip:"Serene tethered balloon ride with lovely views." },
+  climb:    { kind:T.RIDE, name:"Climbing Tower", icon:"🧗", w:1,h:2, cost:1100, refund:440, upkeep:7,  level:3, need:"fun", price:8,  cap:6,  dur:5, excite:6, intensity:5, nausea:1, tip:"Test your nerve scaling the adventure wall." },
+  ropes:    { kind:T.RIDE, name:"Rope Course",    icon:"🤸", w:2,h:2, cost:1450, refund:580, upkeep:8,  level:3, need:"fun", price:9,  cap:10, dur:6, excite:6, intensity:4, nausea:1, tip:"High-rope obstacle course through the treetops." },
+  zipline:  { kind:T.RIDE, name:"Zip Line",       icon:"🪢", w:3,h:1, cost:1900, refund:760, upkeep:9,  level:4, need:"fun", price:12, cap:8,  dur:5, excite:8, intensity:6, nausea:2, tip:"Soar across the park on a thrilling cable!" },
+  safari:   { kind:T.RIDE, name:"Safari Ride",    icon:"🦁", w:2,h:2, cost:2100, refund:840, upkeep:10, level:4, need:"fun", price:12, cap:12, dur:8, excite:7, intensity:2, nausea:1, tip:"Gentle expedition past wildlife — fun for all ages." },
+  cablecar: { kind:T.RIDE, name:"Cable Car",      icon:"🚠", w:3,h:1, cost:2300, refund:920, upkeep:10, level:5, need:"fun", price:11, cap:14, dur:8, excite:6, intensity:2, nausea:1, tip:"Scenic aerial gondola gliding over the park." },
+
+  // ---- UTOPIA (futuristic showpiece attractions) ----
+  obsdome:  { kind:T.RIDE, name:"Observation Dome",icon:"🔭",w:2,h:2, cost:2500, refund:1000,upkeep:11, level:5, need:"fun", price:13, cap:14, dur:7, excite:7, intensity:1, nausea:0, tip:"Panoramic stargazing dome — calm and wondrous." },
+  monorail: { kind:T.RIDE, name:"Sky Monorail",   icon:"🚝", w:3,h:1, cost:2900, refund:1160,upkeep:12, level:6, need:"fun", price:12, cap:16, dur:8, excite:7, intensity:2, nausea:1, tip:"Sleek elevated train circling the whole park." },
+  ufo:      { kind:T.RIDE, name:"UFO Spinner",    icon:"🛸", w:2,h:2, cost:3100, refund:1240,upkeep:13, level:6, need:"fun", price:15, cap:10, dur:5, excite:8, intensity:7, nausea:6, tip:"Whirling flying-saucer ride — dizzying fun." },
+  skysphere:{ kind:T.RIDE, name:"Sky Sphere",     icon:"🌐", w:2,h:2, cost:3900, refund:1560,upkeep:16, level:7, need:"fun", price:18, cap:12, dur:7, excite:10,intensity:6, nausea:3, tip:"The park's utopian centrepiece — a glowing geodesic marvel." },
+
+  // ---- MEGA ATTRACTIONS (late-game showpieces, levels 8–10) ----
+  giga:     { kind:T.RIDE, name:"Giga Coaster",    icon:"🛤️", w:4,h:2, cost:5200, refund:2080,upkeep:20, level:8,  need:"fun", price:22, cap:20, dur:9, excite:10,intensity:8, nausea:6, tip:"A colossal coaster that dominates the skyline." },
+  orbit:    { kind:T.RIDE, name:"Orbital Spinner", icon:"🪐", w:2,h:2, cost:5800, refund:2320,upkeep:21, level:9,  need:"fun", price:24, cap:12, dur:6, excite:10,intensity:9, nausea:7, tip:"Spin among the planets on this cosmic ride." },
+  aurora:   { kind:T.RIDE, name:"Aurora Skytower", icon:"🌌", w:2,h:3, cost:7500, refund:3000,upkeep:24, level:10, need:"fun", price:28, cap:14, dur:7, excite:10,intensity:6, nausea:3, tip:"The crowning glory of your utopia — a glowing aurora tower." },
+
+  // ---- SPECTACLE (over-the-top showpieces) ----
+  dino:     { kind:T.RIDE, name:"Dino Expedition",  icon:"🦖", w:2,h:2, cost:2600, refund:1040,upkeep:12, level:6, need:"fun", price:13, cap:12, dur:8, excite:8, intensity:5, nausea:3, tip:"Journey through a roaring prehistoric jungle." },
+  volcano:  { kind:T.RIDE, name:"Volcano Coaster",  icon:"🌋", w:3,h:2, cost:3400, refund:1360,upkeep:15, level:7, need:"fun", price:16, cap:16, dur:8, excite:9, intensity:8, nausea:5, tip:"Erupting lava coaster — spectacular and intense!" },
+  dragon:   { kind:T.RIDE, name:"Dragon Coaster",   icon:"🐉", w:3,h:2, cost:5400, refund:2160,upkeep:19, level:8, need:"fun", price:21, cap:18, dur:9, excite:10,intensity:9, nausea:6, tip:"A fire-breathing dragon hurtles through loops." },
+  fireworks:{ kind:T.RIDE, name:"Fireworks Show",   icon:"🎆", w:2,h:2, cost:2000, refund:800, upkeep:10, level:5, need:"show",show:true, price:0, cap:0, dur:0, excite:5, intensity:0, nausea:0, tip:"Stage an evening fireworks spectacular that delights the whole park." },
+
+  // ---- SHOPS ----
+  food:     { kind:T.SHOP, name:"Food Stall",    icon:"🍔", w:1,h:1, cost:400, refund:160, upkeep:4, level:1, need:"hunger", price:7,  cap:4, dur:3, excite:1, intensity:0, nausea:0, tip:"Restores hunger." },
+  drink:    { kind:T.SHOP, name:"Drink Stand",   icon:"🥤", w:1,h:1, cost:350, refund:140, upkeep:3, level:1, need:"thirst", price:5,  cap:4, dur:3, excite:1, intensity:0, nausea:0, tip:"Restores thirst — but fills bladders!" },
+  souvenir: { kind:T.SHOP, name:"Souvenirs",     icon:"🎁", w:1,h:1, cost:450, refund:180, upkeep:3, level:2, need:"shop",   price:12, cap:4, dur:3, excite:1, intensity:0, nausea:0, tip:"Pricey trinkets. Pure profit." },
+  restroom: { kind:T.SHOP, name:"Restroom",      icon:"🚻", w:1,h:1, cost:300, refund:120, upkeep:3, level:3, need:"bladder",price:0,  cap:6, dur:2, excite:0, intensity:0, nausea:0, tip:"Free, but vital — relieves bladder & keeps guests happy." },
+  icecream: { kind:T.SHOP, name:"Ice Cream",     icon:"🍦", w:1,h:1, cost:420, refund:168, upkeep:4, level:3, need:"hunger", price:6,  cap:4, dur:3, excite:1, intensity:0, nausea:0, tip:"Sweet treat. Eases hunger & nausea a little." },
+  popcorn:  { kind:T.SHOP, name:"Popcorn Cart",  icon:"🍿", w:1,h:1, cost:380, refund:152, upkeep:3, level:4, need:"hunger", price:5,  cap:4, dur:3, excite:1, intensity:0, nausea:0, tip:"Snack to top up hunger." },
+  atm:      { kind:T.SHOP, name:"Cash Machine",  icon:"🏧", w:1,h:1, cost:500, refund:200, upkeep:2, level:5, need:"cash",   price:2,  cap:6, dur:2, excite:0, intensity:0, nausea:0, tip:"Lets broke guests withdraw cash (you earn the fee)." },
+  photobooth:{ kind:T.SHOP, name:"Photo Booth",  icon:"📸", w:1,h:1, cost:550, refund:220, upkeep:3, level:3, need:"photo",  price:9,  cap:4, dur:2, excite:1, intensity:0, nausea:0, tip:"Guests fresh off a thrill ride buy their photo — high margin! Place near big rides." },
+
+  // ---- SCENERY ----
+  tree:     { kind:T.SCENERY, name:"Tree",     icon:"🌳", w:1,h:1, cost:50,  refund:20, level:1, joy:0.05, tip:"Greenery lifts nearby guests' mood." },
+  bench:    { kind:T.SCENERY, name:"Bench",    icon:"🪑", w:1,h:1, cost:40,  refund:15, level:1, joy:0.03, rest:true, tip:"Tired guests rest here and recover energy." },
+  flowers:  { kind:T.SCENERY, name:"Flowers",  icon:"🌷", w:1,h:1, cost:35,  refund:12, level:2, joy:0.05, tip:"Pretty flowerbeds. Cheap happiness." },
+  hedge:    { kind:T.SCENERY, name:"Hedge",    icon:"🌲", w:1,h:1, cost:45,  refund:18, level:2, joy:0.04, tip:"Tidy landscaping." },
+  lamp:     { kind:T.SCENERY, name:"Lamp",     icon:"💡", w:1,h:1, cost:60,  refund:24, level:3, joy:0.03, light:true, tip:"Lights up paths at night." },
+  statue:   { kind:T.SCENERY, name:"Statue",   icon:"🗿", w:1,h:1, cost:120, refund:48, level:5, joy:0.08, tip:"A grand centrepiece guests admire." },
+  fountain: { kind:T.SCENERY, name:"Fountain", icon:"⛲", w:2,h:2, cost:300, refund:120, level:4, joy:0.12, tip:"Big scenic fountain — strong happiness boost." },
+  palm:     { kind:T.SCENERY, name:"Palm Tree",icon:"🌴", w:1,h:1, cost:60,  refund:24,  level:2, joy:0.06, tip:"Tropical palm — paradise vibes." },
+  lotus:    { kind:T.SCENERY, name:"Lotus Pond",icon:"🪷", w:1,h:1, cost:80,  refund:32,  level:3, joy:0.07, tip:"Tranquil lotus pond." },
+  ecogarden:{ kind:T.SCENERY, name:"Eco Garden",icon:"🌻", w:1,h:1, cost:70,  refund:28,  level:3, joy:0.07, tip:"Sustainable sunflower garden guests adore." },
+  monument: { kind:T.SCENERY, name:"Monument", icon:"🗽", w:1,h:1, cost:160, refund:64,  level:5, joy:0.10, tip:"An inspiring landmark of your utopia." },
+  rainbow:  { kind:T.SCENERY, name:"Rainbow Arch",icon:"🌈",w:2,h:1, cost:260, refund:104, level:6, joy:0.14, light:true, tip:"A glowing rainbow archway — pure utopian joy." },
+};
+
+// Toolbar layout (grouped). Items appear locked until their level is reached.
+const TOOL_GROUPS = [
+  { title: "Paths",     keys: ["path","bridge"] },
+  { title: "Rides",     keys: ["carousel","ferris","pirate","bumper","teacups","haunted","logflume","gokarts","droptower","coaster","spacetower","helipad"] },
+  { title: "Water",     keys: ["splashpad","wavepool","waterslide","lazyriver"] },
+  { title: "Adventure", keys: ["balloon","climb","ropes","zipline","safari","cablecar"] },
+  { title: "Utopia",    keys: ["obsdome","monorail","ufo","skysphere"] },
+  { title: "Mega",      keys: ["giga","orbit","aurora"] },
+  { title: "Spectacle", keys: ["dino","volcano","dragon","fireworks"] },
+  { title: "Shops",     keys: ["food","drink","souvenir","restroom","icecream","popcorn","atm","photobooth"] },
+  { title: "Scenery",   keys: ["tree","bench","flowers","hedge","lamp","statue","fountain","palm","lotus","ecogarden","monument","rainbow"] },
+  { title: "Tools",     keys: ["bulldoze"] },
+];
+
+const COLORS = {
+  grass: "#3a9b50", grassAlt: "#349149",
+  path: "#c9b48c", pathEdge: "#b29a6e",
+  entrance: "#d7a33a",
+  grid: "#00000018",
+  ridePad: "#2c3550", shopPad: "#4a3a2a",
+};
+
+// Intensity → category label/colour for the inspector & guests.
+function thrillClass(intensity) {
+  if (intensity <= 3) return "gentle";
+  if (intensity <= 6) return "moderate";
+  return "thrill";
+}
+
+/* ----------------------------------------------------------------------------
+   2. STATE
+---------------------------------------------------------------------------- */
+let game;
+let canvas, ctx;
+let acc = 0, last = 0;
+let unlockedSpeed5 = false;
+let freeBuild = false;
+let cheatLevel = 0;          // UNLOCKALL/LEVELUP force a minimum unlock level
+
+// presentation-only
+let animT = 0, lastRender = 0;
+let particles = [];
+let hover = { r: -1, c: -1 };
+let selected = null;
+let fireworkTimer = 0;
+let lastMoneySfx = 0;
+let ledgerT = 0;        // throttles live ledger refresh while the panel is open
+let moodsT = 0;         // throttles the live guest-moods dashboard refresh
+let advisorT = 0;       // throttles the advisor hint refresh
+
+function newGame() {
+  const tiles = [];
+  for (let r = 0; r < ROWS; r++) {
+    tiles[r] = [];
+    for (let c = 0; c < COLS; c++) tiles[r][c] = { type: T.GRASS, key: null, ax: -1, ay: -1, litter: 0 };
+  }
+  const ec = Math.floor(COLS / 2);
+  tiles[ROWS - 1][ec] = { type: T.ENTRANCE, key: null, ax: -1, ay: -1, litter: 0 };
+  tiles[ROWS - 2][ec] = { type: T.PATH, key: "path", ax: -1, ay: -1, litter: 0 };
+  tiles[ROWS - 3][ec] = { type: T.PATH, key: "path", ax: -1, ay: -1, litter: 0 };
+
+  return {
+    cash: START_CASH,
+    tiles,
+    entrance: { r: ROWS - 1, c: ec },
+    rides: [],
+    guests: [],
+    nextGuestId: 1,
+    rating: 0,
+    minutes: 9 * 60,
+    day: 1,
+    speed: 1,
+    tool: "path",
+    spawnAccum: 0,
+    admitted: 0,    // lifetime guests admitted (drives level)
+    level: 1,
+    negTimer: 0,
+    staff: [],          // hired janitors / mechanics / entertainers
+    nextStaffId: 1,
+    campaign: null,     // active ad campaign { key, t, mult }
+    partners: {},       // signed partnership deals  { key: true }
+    ledger: newLedger(),
+    weather: { type: "sunny", t: 800 },
+    reputation: 4.0,    // rolling 0–5★ from departing guests' reviews
+    news: [],           // headline log for the news ticker
+    nextGroupId: 1,
+    incidentsToday: 0,  // disasters since the day began
+    dayStartCash: START_CASH,
+    flashT: 0,          // lightning screen-flash timer (presentation)
+  };
+}
+
+// Running profit-and-loss, split by category. Populated via gain()/pay().
+function newLedger() {
+  return {
+    income:  { admissions: 0, rides: 0, shops: 0, photos: 0, partners: 0, refunds: 0 },
+    expense: { construction: 0, upkeep: 0, staff: 0, marketing: 0 },
+  };
+}
+// Every dollar in/out goes through these so the ledger always reconciles.
+function gain(cat, amt) { game.cash += amt; game.ledger.income[cat]  = (game.ledger.income[cat]  || 0) + amt; }
+function pay(cat, amt)  { game.cash -= amt; game.ledger.expense[cat] = (game.ledger.expense[cat] || 0) + amt; }
+
+/* ----------------------------------------------------------------------------
+   3. HELPERS
+---------------------------------------------------------------------------- */
+const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+const rand = (a, b) => a + Math.random() * (b - a);
+const randi = (a, b) => Math.floor(rand(a, b + 1));
+const chance = p => Math.random() < p;
+const inBounds = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
+const tileAt = (r, c) => inBounds(r, c) ? game.tiles[r][c] : null;
+const isWalkable = (r, c) => { const t = tileAt(r, c); return !!t && (t.type === T.PATH || t.type === T.ENTRANCE); };
+const fmtMoney = n => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString();
+const key4 = (r, c) => r * COLS + c;
+function tileCenter(r, c) { return { x: c * TILE + TILE / 2, y: r * TILE + TILE / 2 }; }
+
+// The current effective unlock level (park level, raised by cheats).
+function effLevel() { return Math.max(game.level, cheatLevel); }
+function isUnlocked(key) { return BUILDINGS[key].level <= effLevel(); }
+
+// Footprint rectangle for a building anchored at (r,c).
+function footprintTiles(r, c, def) {
+  const out = [];
+  for (let dr = 0; dr < def.h; dr++)
+    for (let dc = 0; dc < def.w; dc++) out.push([r + dr, c + dc]);
+  return out;
+}
+
+// The service object covering tile (r,c), if any (uses the tile's anchor link).
+function serviceCovering(r, c) {
+  const t = tileAt(r, c);
+  if (t && t.key && (t.type === T.RIDE || t.type === T.SHOP)) return serviceAt(t.ay, t.ax);
+  return null;
+}
+function serviceAt(r, c) { return game.rides.find(s => s.r === r && s.c === c) || null; }
+
+// First path tile orthogonally adjacent to a building's footprint perimeter.
+function adjacentPathFor(r, c, def) {
+  for (const [tr, tc] of footprintTiles(r, c, def)) {
+    for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nr = tr + dr, nc = tc + dc;
+      // skip neighbours that are inside the footprint
+      if (nr >= r && nr < r + def.h && nc >= c && nc < c + def.w) continue;
+      if (isWalkable(nr, nc)) return { r: nr, c: nc };
+    }
+  }
+  return null;
+}
+
+function toast(msg, big) {
+  const el = document.createElement("div");
+  el.className = "toast" + (big ? " big" : "");
+  el.textContent = msg;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(() => el.remove(), 3400);
+}
+
+/* ----------------------------------------------------------------------------
+   3b. PARTICLE / FX SYSTEM
+---------------------------------------------------------------------------- */
+function floatText(x, y, text, color = "#9be07a") {
+  particles.push({ kind: "text", x, y, vy: -22, life: 1.1, max: 1.1, text, color });
+}
+function burst(x, y, color = "#ffd166", n = 10, power = 90) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, sp = rand(power * 0.3, power);
+    particles.push({ kind: "spark", x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - 20,
+      life: rand(0.5, 1.0), max: 1.0, color, size: rand(2, 4) });
+  }
+}
+function launchFirework() {
+  particles.push({ kind: "rocket", x: rand(canvas.width*0.15, canvas.width*0.85), y: canvas.height,
+    vx: rand(-15,15), vy: rand(-300,-360), life: rand(0.7,1.1), max: 1.1, color: `hsl(${randi(0,360)},90%,65%)` });
+}
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= dt;
+    if (p.kind === "text") { p.y += p.vy * dt; p.vy *= 0.96; }
+    else if (p.kind === "spark") { p.vy += 220*dt; p.x += p.vx*dt; p.y += p.vy*dt; }
+    else if (p.kind === "rain") { p.x += p.vx*dt; p.y += p.vy*dt; }
+    else if (p.kind === "rocket") { p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 120*dt;
+      if (p.life <= 0) { burst(p.x, p.y, p.color, 26, 150); sfx("firework"); } }
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  if (particles.length > 1000) particles.splice(0, particles.length - 1000);
+}
+
+/* ----------------------------------------------------------------------------
+   3c. SOUND (synthesized Web Audio)
+---------------------------------------------------------------------------- */
+let audioCtx = null, soundOn = true;
+function initAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function tone(freq, dur, type = "sine", vol = 0.15, slideTo = null) {
+  if (!soundOn || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, t);
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(t); osc.stop(t + dur);
+}
+function sfx(kind) {
+  if (!soundOn || !audioCtx) return;
+  switch (kind) {
+    case "build":    tone(420, 0.08, "square", 0.12, 620); break;
+    case "money":    tone(880, 0.07, "triangle", 0.10); setTimeout(() => tone(1180, 0.09, "triangle", 0.10), 60); break;
+    case "error":    tone(160, 0.18, "sawtooth", 0.12, 90); break;
+    case "ride":     tone(300, 0.25, "sine", 0.08, 520); break;
+    case "bulldoze": tone(220, 0.14, "sawtooth", 0.12, 110); break;
+    case "select":   tone(660, 0.06, "sine", 0.09); break;
+    case "firework": tone(rand(500, 900), 0.18, "triangle", 0.09, 120); break;
+    case "levelup":  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.16,"triangle",0.12),i*90)); break;
+    case "vomit":    tone(140, 0.3, "sawtooth", 0.08, 70); break;
+    case "break":    tone(200, 0.25, "square", 0.10, 120); break;
+  }
+}
+function moneySfx() { const n = performance.now(); if (n - lastMoneySfx > 130) { lastMoneySfx = n; sfx("money"); } }
+
+/* ----------------------------------------------------------------------------
+   4. PATHFINDING (BFS over path tiles, cached per source tile)
+---------------------------------------------------------------------------- */
+let distCache = new Map();
+function invalidatePaths() { distCache.clear(); }
+function distFieldFrom(sr, sc) {
+  const cacheKey = key4(sr, sc);
+  if (distCache.has(cacheKey)) return distCache.get(cacheKey);
+  const dist = new Int32Array(ROWS * COLS).fill(-1);
+  if (!isWalkable(sr, sc)) { distCache.set(cacheKey, dist); return dist; }
+  const q = [[sr, sc]]; dist[key4(sr, sc)] = 0; let head = 0;
+  while (head < q.length) {
+    const [r, c] = q[head++]; const d = dist[key4(r, c)];
+    for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nr = r + dr, nc = c + dc;
+      if (isWalkable(nr, nc) && dist[key4(nr, nc)] === -1) { dist[key4(nr, nc)] = d + 1; q.push([nr, nc]); }
+    }
+  }
+  distCache.set(cacheKey, dist);
+  return dist;
+}
+function stepToward(r, c, entry) {
+  const dist = distFieldFrom(entry.r, entry.c);
+  const here = dist[key4(r, c)];
+  if (here <= 0) return null;
+  for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+    const nr = r + dr, nc = c + dc;
+    if (isWalkable(nr, nc) && dist[key4(nr, nc)] === here - 1) return { r: nr, c: nc };
+  }
+  return null;
+}
+function reachableFromEntrance(entry) {
+  const dist = distFieldFrom(game.entrance.r, game.entrance.c);
+  return dist[key4(entry.r, entry.c)] >= 0;
+}
+
+/* ----------------------------------------------------------------------------
+   4b. CLEANLINESS (litter) & CROWDING (density)
+---------------------------------------------------------------------------- */
+let densGrid = new Int16Array(ROWS * COLS);   // guests per tile, refreshed each step
+
+function computeDensity() {
+  densGrid.fill(0);
+  for (const g of game.guests) {
+    if (inBounds(g.r, g.c)) densGrid[key4(g.r, g.c)]++;
+  }
+}
+// How crowded is it right where this guest is standing? (3x3 neighbourhood)
+function crowdAround(r, c) {
+  let n = 0;
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (inBounds(r + dr, c + dc)) n += densGrid[key4(r + dr, c + dc)];
+  }
+  return n;
+}
+function addLitter(r, c, amt) {
+  const t = tileAt(r, c);
+  if (t && (t.type === T.PATH || t.type === T.ENTRANCE)) t.litter = clamp((t.litter || 0) + amt, 0, 100);
+}
+function litterAround(r, c) {
+  let total = 0;
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    const t = tileAt(r + dr, c + dc);
+    if (t) total += (t.litter || 0);
+  }
+  return total;
+}
+// Park-wide cleanliness 0..100 (100 = spotless) for the rating calc.
+function cleanliness() {
+  let sum = 0, paths = 0;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = game.tiles[r][c];
+    if (t.type === T.PATH || t.type === T.ENTRANCE) { paths++; sum += (t.litter || 0); }
+  }
+  if (!paths) return 100;
+  return clamp(100 - sum / paths, 0, 100);
+}
+
+/* ----------------------------------------------------------------------------
+   4c. STAFF (janitors clean litter, mechanics fix rides, entertainers cheer)
+---------------------------------------------------------------------------- */
+const STAFF_TYPES = {
+  janitor:      { name: "Janitor",      icon: "🧹", color: "#5bd98a", hire: 250, wage: 6, tip: "Walks paths sweeping up litter and emptying bins." },
+  mechanic:     { name: "Mechanic",     icon: "🔧", color: "#ffb74d", hire: 350, wage: 8, tip: "Repairs broken-down rides fast and keeps them reliable." },
+  entertainer:  { name: "Entertainer",  icon: "🤹", color: "#ff9ff3", hire: 300, wage: 7, tip: "Roams the park cheering up nearby guests." },
+  photographer: { name: "Photographer", icon: "📷", color: "#7bd0ff", hire: 280, wage: 6, tip: "Roams snapping guest photos — boosts happiness and earns a little cash." },
+  firefighter:  { name: "Firefighter",  icon: "🚒", color: "#ff5b5b", hire: 400, wage: 9, tip: "Rushes to fires and douses them before they spread & destroy rides." },
+};
+
+function hireStaff(type) {
+  const def = STAFF_TYPES[type];
+  if (game.cash < def.hire) { toast("Can't afford a " + def.name + " ($" + def.hire + ")"); sfx("error"); return; }
+  pay("staff", def.hire);
+  const e = game.entrance, p = tileCenter(e.r, e.c);
+  game.staff.push({
+    id: game.nextStaffId++, type, def,
+    r: e.r, c: e.c, x: p.x, y: p.y, tx: p.x, ty: p.y,
+    target: null, busyT: 0, phase: Math.random() * Math.PI * 2,
+  });
+  sfx("build"); floatText(p.x, p.y - 8, "-$" + def.hire, "#ff9b9b");
+  toast(def.icon + " " + def.name + " hired!");
+  renderManagePanel();
+}
+function fireStaff(id) {
+  const i = game.staff.findIndex(s => s.id === id);
+  if (i >= 0) { toast(game.staff[i].def.name + " let go."); game.staff.splice(i, 1); renderManagePanel(); }
+}
+
+function nearestLitterTile(r, c) {
+  let best = null, bd = 1e9;
+  for (let rr = 0; rr < ROWS; rr++) for (let cc = 0; cc < COLS; cc++) {
+    const t = game.tiles[rr][cc];
+    if ((t.type === T.PATH) && (t.litter || 0) > 8) {
+      const d = Math.abs(rr - r) + Math.abs(cc - c);
+      if (d < bd) { bd = d; best = { r: rr, c: cc }; }
+    }
+  }
+  return best;
+}
+function nearestBrokenRide(r, c) {
+  let best = null, bd = 1e9;
+  for (const s of game.rides) {
+    if (s.broken && s.entry) {
+      const d = Math.abs(s.entry.r - r) + Math.abs(s.entry.c - c);
+      if (d < bd) { bd = d; best = s; }
+    }
+  }
+  return best;
+}
+
+function staffStep(s, dtTicks) {
+  // pick a goal based on role
+  if (!s.target) {
+    if (s.type === "janitor") { const lt = nearestLitterTile(s.r, s.c); s.target = lt ? { r: lt.r, c: lt.c } : null; }
+    else if (s.type === "mechanic") { let br = nearestBrokenRide(s.r, s.c) || lowestConditionRide(); s.target = br && br.entry ? { r: br.entry.r, c: br.entry.c, ride: br } : null; }
+    else if (s.type === "firefighter") { const f = nearestFire(s.r, s.c); s.target = f && f.entry ? { r: f.entry.r, c: f.entry.c, ride: f } : null; }
+    if (!s.target) { // no job: wander
+      const opts = [];
+      for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) if (isWalkable(s.r+dr, s.c+dc)) opts.push({ r: s.r+dr, c: s.c+dc });
+      if (opts.length && Math.random() < 0.5 * dtTicks) { const n = opts[randi(0, opts.length-1)]; s.r=n.r; s.c=n.c; const p=tileCenter(n.r,n.c); s.tx=p.x; s.ty=p.y; }
+    }
+  }
+  // entertainers just cheer nearby guests, no travel goal
+  if (s.type === "entertainer") {
+    for (const g of game.guests) if (Math.abs(g.r - s.r) <= 1 && Math.abs(g.c - s.c) <= 1) g.happiness = clamp(g.happiness + 0.25 * dtTicks, 0, 100);
+  }
+  // photographers periodically snap nearby guests: a flash, a happiness bump, a little cash
+  if (s.type === "photographer") {
+    s.busyT -= dtTicks;
+    if (s.busyT <= 0) {
+      let n = 0;
+      for (const g of game.guests) if (Math.abs(g.r - s.r) <= 1 && Math.abs(g.c - s.c) <= 1) { g.happiness = clamp(g.happiness + 5, 0, 100); setEmote(g, "📸"); n++; }
+      if (n > 0) { const fee = n * 2; gain("photos", fee); burst(s.x, s.y - 4, "#ffffff", 7, 45); floatText(s.x, s.y - 10, "+$" + fee, "#9be07a"); s.busyT = randi(15, 30); }
+      else s.busyT = 6;
+    }
+  }
+
+  // do the job if standing on/at target
+  if (s.type === "janitor") {
+    const t = tileAt(s.r, s.c);
+    if (t && (t.litter || 0) > 0) t.litter = clamp(t.litter - 6 * dtTicks, 0, 100);
+  }
+  if (s.type === "mechanic" && s.target && s.target.ride) {
+    const ride = s.target.ride;
+    if (s.r === s.target.r && s.c === s.target.c) {
+      if (ride.broken) { ride.brokenT -= 8 * dtTicks; if (ride.brokenT <= 0) { ride.broken = false; releaseStranded(ride, false); ride.condition = clamp(ride.condition + 25, 0, 100); floatText((ride.c+ride.def.w/2)*TILE, ride.r*TILE, "🔧 fixed!", "#9be07a"); s.target = null; } }
+      else if (ride.condition < 99) { ride.condition = clamp(ride.condition + 4 * dtTicks, 0, 100); if (ride.condition >= 99) { floatText((ride.c+ride.def.w/2)*TILE, ride.r*TILE, "🔧 serviced", "#9be07a"); s.target = null; } }
+      else s.target = null;
+    }
+  }
+  // firefighters douse fires (holding off destruction) until they're out
+  if (s.type === "firefighter" && s.target && s.target.ride) {
+    const ride = s.target.ride;
+    if (s.r === s.target.r && s.c === s.target.c) {
+      if (ride.onFire) {
+        ride.fireT += 6 * dtTicks; s.busyT = (s.busyT || 0) + dtTicks;
+        if (chance(0.5)) burst(s.x, s.y - 4, "#9cc7ff", 4, 55);
+        if (s.busyT > 25) { ride.onFire = false; ride.fireT = 0; ride.condition = clamp(ride.condition, 8, 100); addNews("🚒 Firefighters doused the blaze at the " + ride.def.name + "."); s.busyT = 0; s.target = null; }
+      } else { s.busyT = 0; s.target = null; }
+    }
+  }
+
+  // movement toward target tile
+  if (s.target) {
+    if (s.r === s.target.r && s.c === s.target.c) {
+      // arrived; janitor clears local litter then clears target to find next
+      if (s.type === "janitor") { const t = tileAt(s.r, s.c); if (!t || (t.litter || 0) < 1) s.target = null; }
+    } else {
+      const step = stepToward(s.r, s.c, s.target);
+      if (step) { s.r = step.r; s.c = step.c; const p = tileCenter(step.r, step.c); s.tx = p.x; s.ty = p.y; }
+      else s.target = null;
+    }
+  }
+  // smooth pixel movement
+  const sp = 1.5 * dtTicks, dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy);
+  if (d > sp) { s.x += dx/d*sp; s.y += dy/d*sp; } else { s.x = s.tx; s.y = s.ty; }
+}
+
+/* ----------------------------------------------------------------------------
+   4d. MARKETING — advertising campaigns & partnership deals
+---------------------------------------------------------------------------- */
+// Campaigns: one-off spend that multiplies attendance for a real-time duration.
+const CAMPAIGNS = {
+  flyers:  { name: "Local Flyers",      icon: "📄", cost: 400,  mult: 1.4, secs: 45,  tip: "A cheap little attendance bump." },
+  radio:   { name: "Radio Spot",        icon: "📻", cost: 1200, mult: 1.8, secs: 70,  tip: "Solid mid-range boost." },
+  tv:      { name: "TV Campaign",       icon: "📺", cost: 3000, mult: 2.4, secs: 90,  tip: "Big, lasting surge of visitors." },
+  social:  { name: "Social Media Blitz",icon: "📱", cost: 1800, mult: 2.8, secs: 40,  tip: "Huge but short-lived viral spike." },
+};
+// Partnerships: ongoing deals with daily effects (toggle on; cancel anytime).
+const PARTNERS = {
+  soda:    { name: "FizzCo Sponsorship",   icon: "🥤", daily: 220,  attend: 1.0,  tip: "A soda brand pays you $220/day to plaster their logo around." },
+  agency:  { name: "Ad Agency Retainer",   icon: "🏢", daily: -180, attend: 1.25, tip: "Pay $180/day; a steady +25% attendance from constant ads." },
+  airline: { name: "Airline Tie-in",       icon: "✈️", daily: -120, attend: 1.15, tip: "Tourist packages: -$120/day for +15% attendance." },
+  brand:   { name: "Toy Brand Deal",       icon: "🧸", daily: 140,  attend: 1.05, tip: "Co-branded souvenirs: +$140/day and a small attendance lift." },
+};
+function attendanceMult() {
+  let m = weatherAttend();           // weather drives footfall (rain empties the park)
+  m *= 0.45 + (game.reputation || 0) * 0.16;   // word of mouth (★0→0.45, ★5→1.25)
+  if (game.campaign) m *= game.campaign.mult;
+  for (const k in game.partners) if (game.partners[k]) m *= PARTNERS[k].attend;
+  return m;
+}
+function startCampaign(key) {
+  const def = CAMPAIGNS[key];
+  if (game.cash < def.cost) { toast("Can't afford the " + def.name); sfx("error"); return; }
+  pay("marketing", def.cost);
+  game.campaign = { key, t: def.secs, mult: def.mult };
+  sfx("levelup"); toast(def.icon + " " + def.name + " launched! Attendance ×" + def.mult);
+  renderManagePanel();
+}
+function togglePartner(key) {
+  game.partners[key] = !game.partners[key];
+  toast((game.partners[key] ? "Signed: " : "Ended: ") + PARTNERS[key].name);
+  sfx("select"); renderManagePanel();
+}
+function campaignTick(rdt) {            // runs on the real-time clock
+  if (game.campaign) {
+    game.campaign.t -= rdt;
+    if (game.campaign.t <= 0) { toast("📣 " + CAMPAIGNS[game.campaign.key].name + " campaign ended."); game.campaign = null; renderManagePanel(); }
+  }
+}
+function partnersDailyPayout() {        // called when the in-game day rolls over
+  let net = 0;
+  for (const k in game.partners) if (game.partners[k]) net += PARTNERS[k].daily;
+  if (net > 0) { gain("partners", net); toast("🤝 Partners paid +" + fmtMoney(net) + " today"); }
+  else if (net < 0) { pay("marketing", -net); toast("🤝 Partner fees " + fmtMoney(net) + " today"); }
+}
+
+/* ----------------------------------------------------------------------------
+   4e. WEATHER & SEASONAL ATTIRE
+---------------------------------------------------------------------------- */
+// Each weather type tweaks attendance + needs, and dresses guests appropriately.
+const WEATHERS = {
+  sunny:  { name:"Sunny",    icon:"☀️", attire:["🕶️","🧢","🌞"], attend:1.15, thirst:1.3, energy:1.0, mood: 0.02 },
+  cloudy: { name:"Cloudy",   icon:"☁️", attire:[],               attend:1.00, thirst:1.0, energy:1.0, mood: 0.00 },
+  rainy:  { name:"Rainy",    icon:"🌧️", attire:["☔","🧥","☂️"],  attend:0.55, thirst:0.8, energy:1.1, mood:-0.06, rain:true },
+  hot:    { name:"Heatwave", icon:"🥵", attire:["🕶️","🧢","🩳"], attend:0.90, thirst:1.9, energy:1.3, mood:-0.03 },
+  cold:   { name:"Cold",     icon:"❄️", attire:["🧣","🧤","🧥"],  attend:0.70, thirst:0.7, energy:1.2, mood:-0.03 },
+  storm:  { name:"Storm",    icon:"⛈️", attire:["☔","🧥","☂️"],  attend:0.40, thirst:0.7, energy:1.1, mood:-0.08, rain:true },
+};
+function weatherDef() { return WEATHERS[game.weather.type] || WEATHERS.sunny; }
+function weatherAttend() { return weatherDef().attend; }
+
+// Pick a weather-appropriate accessory for a guest (some guests wear nothing).
+function pickAttire() {
+  const a = weatherDef().attire;
+  return (a.length && chance(0.85)) ? a[randi(0, a.length - 1)] : null;
+}
+function reassignAttire() { for (const g of game.guests) g.attire = pickAttire(); }
+
+function updateWeather(dtTicks) {
+  game.weather.t -= dtTicks;
+  if (game.weather.t <= 0) {
+    const bag = ["sunny","sunny","sunny","cloudy","cloudy","rainy","hot","cold","storm"];
+    game.weather.type = bag[randi(0, bag.length - 1)];
+    game.weather.t = rand(700, 1500);
+    reassignAttire();
+    const msg = weatherDef().icon + " The weather turns " + weatherDef().name + "!";
+    toast(msg); addNews(msg);
+  }
+  // storms unleash lightning that can strike rides
+  if (game.weather.type === "storm" && chance(0.012 * dtTicks)) lightningStrike();
+}
+
+/* ----------------------------------------------------------------------------
+   4f. REPUTATION · NEWS · INCIDENTS  (the chaos/marketing feedback loop)
+---------------------------------------------------------------------------- */
+const FIRST_NAMES = ["Alex","Sam","Jordan","Riya","Mia","Liam","Noah","Ava","Zoe","Omar","Ivy","Leo","Nina","Theo","Maya","Finn","Ravi","Lola","Kai","Ada","Ben","Esme","Cleo","Hugo"];
+const SURNAMES   = ["Park","Stone","Rivera","Khan","Chen","Patel","Brooks","Vale","Frost","Quinn","Ross","Hale","Marsh","Bell","Cole","Day","Wren","Banks"];
+const VIP_TITLES = ["Pop star","Influencer","Movie star","Footballer","Royal","Celebrity chef","TV host"];
+const ageOf = () => { const r = Math.random(); return r < 0.28 ? "child" : r < 0.86 ? "adult" : "senior"; };
+const ageIcon = a => a === "child" ? "🧒" : a === "senior" ? "🧓" : "🧑";
+
+// Add a headline to the rolling news log + the on-screen ticker.
+function addNews(text) {
+  game.news.push(text);
+  if (game.news.length > 50) game.news.shift();
+  const el = document.getElementById("ticker-text");
+  if (el) { el.textContent = text; el.classList.remove("slide"); void el.offsetWidth; el.classList.add("slide"); }
+}
+// Departing guests leave a review that nudges the park's rolling star rating.
+function addReview(stars) { game.reputation = clamp(game.reputation * 0.98 + stars * 0.02, 0, 5); }
+function guestReview(g) {
+  let stars = 1 + (g.happiness / 100) * 4;
+  if (g.ridesTaken === 0) stars -= 1.2;
+  if (g.stuck) stars -= 1.6;
+  if (g.vip) stars = stars + 0.5;
+  stars = clamp(stars, 1, 5);
+  addReview(stars);
+  if (g.vip) addNews("⭐ " + g.title + " " + g.name + " left after a " + stars.toFixed(1) + "★ visit!");
+  else if (stars >= 4.6 && chance(0.14)) addNews('⭐ ' + g.name + ' gave ' + stars.toFixed(1) + '★ — "Best day ever!"');
+  else if (stars <= 1.6 && chance(0.14)) addNews('😡 ' + g.name + ' left ' + stars.toFixed(1) + '★ — "Never coming back."');
+}
+// An incident: log it, dent reputation, count it for the daily recap.
+function incident(text, repHit) {
+  game.incidentsToday++;
+  game.reputation = clamp(game.reputation - (repHit || 0.2), 0, 5);
+  if (text) addNews(text);
+}
+
+function nearestFire(r, c) {
+  let best = null, bd = 1e9;
+  for (const s of game.rides) if (s.onFire && s.entry) {
+    const d = Math.abs(s.entry.r - r) + Math.abs(s.entry.c - c);
+    if (d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+function lowestConditionRide() {
+  let best = null, bw = 70;   // only bother inspecting rides below 70%
+  for (const s of game.rides) if (s.def.kind === T.RIDE && !s.onFire && s.condition < bw) { bw = s.condition; best = s; }
+  return best;
+}
+function igniteFire(s) {
+  if (s.onFire || (s.def.kind !== T.RIDE && s.def.kind !== T.SHOP)) return;
+  s.onFire = true; s.fireT = rand(150, 250);
+  sfx("break");
+  incident("🔥 Fire breaks out at the " + s.def.name + "!", 0.4);
+}
+function strandRiders(s) { if (s.riders && s.riders.length) { s.stranded = s.riders.slice(); for (const g of s.stranded) g.stuck = true; s.riders = []; } }
+function releaseStranded(s, furious) {
+  if (!s.stranded) return;
+  for (const g of s.stranded) { g.stuck = false; g.stuckT = 0; g.state = "idle"; g.target = null; if (furious) { g.happiness = clamp(g.happiness - 15, 0, 100); setEmote(g, "😡"); } }
+  s.stranded = null;
+}
+// Free EVERYONE aboard a ride that's being removed/destroyed so no guest is ever
+// left permanently frozen in the "using" state on a ride that no longer exists.
+function freeRiders(s, furious) {
+  releaseStranded(s, furious);
+  if (s.riders) { for (const g of s.riders) if (g.state === "using") { g.stuck = false; g.stuckT = 0; g.state = "idle"; g.target = null; } s.riders = []; }
+}
+function destroyService(s) {
+  freeRiders(s, true);
+  for (const g of s.queue) { g.state = "idle"; g.target = null; }
+  for (const [tr, tc] of footprintTiles(s.r, s.c, s.def)) { const t = tileAt(tr, tc); if (t) { t.type = T.GRASS; t.key = null; t.ax = -1; t.ay = -1; } }
+  const i = game.rides.indexOf(s); if (i >= 0) game.rides.splice(i, 1);
+  if (selected && selected.ref === s) closeInspector();
+  invalidatePaths(); refreshServiceEntries();
+}
+function lightningStrike() {
+  game.flashT = 0.5; sfx("break");
+  const rides = game.rides.filter(s => s.def.kind === T.RIDE);
+  if (!rides.length) return;
+  const s = rides[randi(0, rides.length - 1)];
+  burst((s.c + s.def.w/2) * TILE, (s.r + s.def.h/2) * TILE, "#ffffff", 16, 170);
+  if (chance(0.5)) igniteFire(s);
+  else { s.broken = true; s.brokenT = rand(90, 170); strandRiders(s); incident("⚡ Lightning strikes the " + s.def.name + "!", 0.3); }
+}
+
+// End-of-day recap headline + high-reputation award.
+function dailyTick() {
+  const profit = game.cash - game.dayStartCash;
+  addNews("📅 Day " + (game.day - 1) + " recap · ★" + game.reputation.toFixed(1) + " · " + (profit >= 0 ? "+" : "") + fmtMoney(profit) + " · " + game.incidentsToday + " incident" + (game.incidentsToday === 1 ? "" : "s"));
+  if (game.reputation >= 4.5) { addNews("🏆 Critics rave — your park is top-rated!"); for (let i = 0; i < 3; i++) setTimeout(launchFirework, i * 160); }
+  game.dayStartCash = game.cash;
+  game.incidentsToday = 0;
+}
+
+/* ----------------------------------------------------------------------------
+   5. GUESTS
+---------------------------------------------------------------------------- */
+const GUEST_COLORS = ["#ff7b7b","#ffd166","#7bdff2","#b08bff","#9be07a","#ff9ff3","#f6a","#ffa94d"];
+// thrill preference depends on age group
+function thrillForAge(age) { return age === "child" ? rand(1, 4) : age === "senior" ? rand(1, 5) : rand(3, 9); }
+
+function spawnGuest(opts = {}) {
+  const e = game.entrance, p = tileCenter(e.r, e.c);
+  const age = opts.age || ageOf();
+  const surname = opts.surname || SURNAMES[randi(0, SURNAMES.length - 1)];
+  const vip = !!opts.vip;
+  const name = FIRST_NAMES[randi(0, FIRST_NAMES.length - 1)] + " " + surname;
+  const g = {
+    id: game.nextGuestId++, name, age, vip, title: vip ? VIP_TITLES[randi(0, VIP_TITLES.length - 1)] : null,
+    groupId: opts.groupId || 0,
+    r: e.r, c: e.c, x: p.x, y: p.y, tx: p.x, ty: p.y,
+    color: opts.color || GUEST_COLORS[randi(0, GUEST_COLORS.length - 1)],
+    money: vip ? rand(180, 340) : rand(45, 130),
+    happiness: rand(60, 90),
+    hunger: rand(0, 30), thirst: rand(0, 30), energy: rand(70, 100),
+    bladder: rand(0, 25), nausea: rand(0, 10),
+    thrillPref: vip ? rand(4, 9) : thrillForAge(age),
+    state: "idle", target: null, entry: null, useTimer: 0,
+    ridesTaken: 0, spent: 0, paidEntry: false, stuck: false,
+    phase: Math.random() * Math.PI * 2, emote: null, emoteT: 0,
+    carryTrash: 0, crowd: 0, dirty: 0, ateT: 0, rodeT: 0,
+    attire: pickAttire(),
+  };
+  game.guests.push(g);
+  if (vip) addNews("⭐ " + g.title + " " + g.name + " is visiting the park!");
+  return g;
+}
+
+// One arrival: usually a single guest, sometimes a family group, rarely a VIP.
+function admitOne() { gain("admissions", ENTRY_FEE); game.admitted++; }
+function spawnArrival() {
+  if (chance(0.02)) { spawnGuest({ vip: true }); admitOne(); checkLevelUp(); return; }
+  if (chance(0.35)) {   // a family/group travelling together
+    const gid = game.nextGroupId++, surname = SURNAMES[randi(0, SURNAMES.length - 1)];
+    const color = GUEST_COLORS[randi(0, GUEST_COLORS.length - 1)], n = randi(2, 4);
+    for (let i = 0; i < n && game.guests.length < 450; i++) { spawnGuest({ groupId: gid, surname, color, age: i === 0 ? "adult" : ageOf() }); admitOne(); }
+  } else { spawnGuest(); admitOne(); }
+  checkLevelUp();
+}
+function setEmote(g, emoji, secs = 1.6) { g.emote = emoji; g.emoteT = secs; }
+
+// Score how appealing a service is to this guest right now (or -1 to skip).
+function appealOf(g, s) {
+  const def = s.def;
+  if (def.show) return -1;                 // ambient show building — never queued
+  if (!s.entry || !reachableFromEntrance(s.entry)) return -1;
+  if (s.broken || s.onFire) return -1;
+  const price = s.price;
+  if (def.need !== "cash" && price > g.money) return -1;     // can't afford
+  // reachability from the guest's own spot
+  if (!(g.r === s.entry.r && g.c === s.entry.c) && !stepToward(g.r, g.c, s.entry)) return -1;
+
+  let score = rand(0, 3);
+  if (def.need === "fun") {
+    const novelty = s.novelty / 100;
+    score += def.excite * 2.2 * novelty;
+    // thrill matching: love rides near your preferred intensity, fear ones above it
+    const over = def.intensity - g.thrillPref;
+    if (over > 2) score -= over * 4;            // too scary
+    else score += (4 - Math.abs(over)) * 1.5;   // just right
+    if (def.cool) score += g.nausea * 0.8 + (100 - g.energy) * 0.12;  // hot/queasy guests crave water rides
+    else { score -= g.nausea * 0.5; if (def.nausea >= 5 && g.nausea > 40) score -= 20; }
+  } else if (def.need === "hunger") score += g.hunger * 0.9;
+  else if (def.need === "thirst") score += g.thirst * 0.95;
+  else if (def.need === "bladder") score += g.bladder * 1.3;       // urgent!
+  else if (def.need === "shop")    score += 4 + g.money * 0.04;
+  else if (def.need === "cash")    score += (g.money < 18 ? 60 : -100);
+  else if (def.need === "photo")   score += (g.rodeT > 0 ? 55 : -40) + g.money * 0.02;  // want it right after a ride
+
+  score -= price * 0.28;            // value sensitivity
+  score -= s.queue.length * 1.4;    // avoid long lines
+  return score;
+}
+
+function chooseTarget(g) {
+  if (!game.rides.length) return false;
+  let best = null, bestScore = 4;   // need some minimum appeal to bother
+  for (const s of game.rides) {
+    const sc = appealOf(g, s);
+    if (sc > bestScore) { bestScore = sc; best = s; }
+  }
+  if (!best) return false;
+  g.target = { r: best.r, c: best.c };
+  g.entry = best.entry;
+  g.state = "walking";
+  return true;
+}
+
+function guestLeave(g) { g.state = "leaving"; g.target = { ...game.entrance }; g.entry = { ...game.entrance }; }
+
+function updateGuest(g, dtTicks) {
+  const w = weatherDef();
+  // needs decay (weather scales thirst & energy use)
+  g.hunger  = clamp(g.hunger  + 0.20 * dtTicks, 0, 100);
+  g.thirst  = clamp(g.thirst  + 0.24 * w.thirst * dtTicks, 0, 100);
+  g.bladder = clamp(g.bladder + 0.18 * dtTicks, 0, 100);
+  g.energy  = clamp(g.energy  - 0.13 * w.energy * dtTicks, 0, 100);
+  g.nausea  = clamp(g.nausea  - 0.30 * dtTicks, 0, 100);  // settles over time
+
+  // sample environment for mood + thoughts
+  g.dirty = litterAround(g.r, g.c);          // 0..~900
+  g.crowd = crowdAround(g.r, g.c);           // guests in 3x3
+  if (g.ateT > 0) g.ateT -= dtTicks;
+  if (g.rodeT > 0) g.rodeT -= dtTicks;
+
+  // mood
+  let mood = -0.02;
+  if (g.hunger > 75)  mood -= 0.22;
+  if (g.thirst > 75)  mood -= 0.26;
+  if (g.bladder > 80) mood -= 0.30;
+  if (g.energy < 20)  mood -= 0.18;
+  if (g.nausea > 60)  mood -= 0.35;
+  if (g.dirty > 60)   mood -= 0.10 + Math.min(g.dirty, 300) / 1500;  // dirty surroundings
+  if (g.crowd > 8)    mood -= (g.crowd - 8) * 0.018;                 // too crowded (gentler)
+  mood += w.mood;                                                    // weather
+  mood += sceneryBonus(g);
+  // a content guest (no pressing needs) slowly cheers back up — guarantees
+  // recovery so satisfied visitors aren't dragged into an unrecoverable spiral
+  const calm = g.hunger < 60 && g.thirst < 60 && g.bladder < 70 && g.nausea < 50 && g.energy > 25 && g.dirty < 90 && g.crowd <= 8;
+  if (calm && g.happiness < 78) mood += 0.07;
+  g.happiness = clamp(g.happiness + mood * dtTicks, 0, 100);
+
+  // carrying trash? chance to drop it on the path as they walk
+  if (g.carryTrash > 0 && (g.state === "walking" || g.state === "idle") && chance(0.04 * dtTicks)) {
+    addLitter(g.r, g.c, 14); g.carryTrash--;
+  }
+
+  // distress emotes (positive ones flashed on ride finish)
+  if (g.state !== "using") {
+    if (g.nausea > 70)       setEmote(g, "🤮");
+    else if (g.happiness<22) setEmote(g, "😠");
+    else if (g.bladder > 88) setEmote(g, "🚽");
+    else if (g.dirty > 170)  setEmote(g, "🤧");
+    else if (g.crowd > 10)   setEmote(g, "😖");
+    else if (g.energy < 15)  setEmote(g, "😴");
+    else if (g.hunger > 88)  setEmote(g, "😣");
+    else if (g.thirst > 88)  setEmote(g, "🥵");
+  }
+
+  switch (g.state) {
+    case "idle":
+      if (g.happiness < 22 || g.money < 4) { guestLeave(g); break; }
+      if (!chooseTarget(g)) { g.useTimer += dtTicks; if (g.useTimer > 18) { g.useTimer = 0; wander(g); } }
+      break;
+    case "walking": case "leaving":
+      moveAlong(g, dtTicks); break;
+    case "queuing": {
+      const s = serviceAt(g.target.r, g.target.c);
+      if (!s || s.broken) { g.state = "idle"; g.target = null; if (s && s.broken) setEmote(g, "😤"); }
+      break;
+    }
+    case "using":
+      if (g.stuck) {             // stranded on a broken ride until staff free them
+        g.stuckT = (g.stuckT || 0) + dtTicks;
+        if (g.stuckT > 600) { g.stuck = false; g.stuckT = 0; g.state = "idle"; g.target = null; g.happiness = clamp(g.happiness - 10, 0, 100); }  // safety: never frozen forever
+        break;
+      }
+      g.useTimer -= dtTicks;
+      if (g.useTimer <= 0) { g.state = "idle"; g.target = null; }
+      break;
+  }
+}
+
+function wander(g) {
+  const opts = [];
+  for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) if (isWalkable(g.r + dr, g.c + dc)) opts.push({ r: g.r + dr, c: g.c + dc });
+  if (opts.length) { const n = opts[randi(0, opts.length - 1)]; g.r = n.r; g.c = n.c; const p = tileCenter(n.r, n.c); g.tx = p.x; g.ty = p.y; }
+}
+
+function moveAlong(g, dtTicks) {
+  const speed = 1.6 * dtTicks;
+  const dx = g.tx - g.x, dy = g.ty - g.y, d = Math.hypot(dx, dy);
+  if (d > speed) { g.x += (dx / d) * speed; g.y += (dy / d) * speed; return; }
+  g.x = g.tx; g.y = g.ty;
+  const dest = g.entry;
+  if (g.r === dest.r && g.c === dest.c) {
+    if (g.state === "leaving") { removeGuest(g); return; }
+    const s = serviceAt(g.target.r, g.target.c);
+    if (s && !s.broken) { s.queue.push(g); g.state = "queuing"; } else { g.state = "idle"; g.target = null; }
+    return;
+  }
+  const step = stepToward(g.r, g.c, dest);
+  if (!step) { if (g.state === "leaving") guestLeave(g); else { g.state = "idle"; g.target = null; } return; }
+  g.r = step.r; g.c = step.c; const p = tileCenter(step.r, step.c); g.tx = p.x; g.ty = p.y;
+}
+
+function removeGuest(g) { guestReview(g); const i = game.guests.indexOf(g); if (i >= 0) game.guests.splice(i, 1); }
+
+// Nearby scenery lifts mood; benches restore energy.
+function sceneryBonus(g) {
+  let bonus = 0;
+  for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+    const t = tileAt(g.r + dr, g.c + dc);
+    if (t && t.type === T.SCENERY && t.key) {
+      const def = BUILDINGS[t.key];
+      bonus += def.joy || 0.03;
+      if (def.rest && Math.abs(dr) <= 1 && Math.abs(dc) <= 1) g.energy = clamp(g.energy + 0.4, 0, 100);
+    }
+  }
+  return Math.min(bonus, 0.3);
+}
+
+/* ----------------------------------------------------------------------------
+   6. RIDES / SHOPS
+---------------------------------------------------------------------------- */
+function makeService(key, r, c) {
+  const def = BUILDINGS[key];
+  return {
+    key, def, r, c,
+    queue: [], riders: [], busy: false, timer: 0, served: 0,
+    price: def.price, novelty: 100,
+    entry: adjacentPathFor(r, c, def),
+    broken: false, brokenT: 0, reliability: rand(0.985, 0.997),
+    condition: 100, stranded: null, onFire: false, fireT: 0, showT: rand(200, 600),
+  };
+}
+
+// Fireworks-show buildings put on a dazzling evening display that lifts the
+// whole park's mood and reputation.
+function showTick(s, dtTicks) {
+  s.showT -= dtTicks;
+  if (s.showT > 0) return;
+  const hour = Math.floor(game.minutes / 60);
+  if (hour >= 18 && game.guests.length > 3) {
+    s.showT = rand(900, 1500);
+    for (let i = 0; i < 14; i++) setTimeout(launchFirework, i * 120);
+    for (const g of game.guests) g.happiness = clamp(g.happiness + 12, 0, 100);
+    game.reputation = clamp(game.reputation + 0.15, 0, 5);
+    addNews("🎆 The " + s.def.name + " lights up the sky — guests are dazzled!");
+    sfx("levelup");
+  } else { s.showT = 200; }   // re-check again soon (waiting for evening)
+}
+
+function updateRide(s, dtTicks) {
+  const def = s.def;
+  const ccx = (s.c + def.w / 2) * TILE, ccy = (s.r + def.h / 2) * TILE;
+
+  // ---- fireworks-show buildings run scheduled evening shows ----
+  if (def.show) { showTick(s, dtTicks); return; }
+
+  // ---- on fire: burn, smoke, spread, and eventually be destroyed ----
+  if (s.onFire) {
+    s.fireT -= dtTicks;
+    s.condition = clamp(s.condition - 0.4 * dtTicks, 0, 100);
+    if (chance(0.6)) particles.push({ kind: "spark", x: ccx + rand(-def.w*TILE/2, def.w*TILE/2), y: ccy, vx: rand(-12,12), vy: rand(-50,-20), life: rand(0.5,1.0), max: 1.0, color: chance(0.5)?"#ff6a2a":"#4a4a4a", size: rand(2,5) });
+    if (chance(0.006 * dtTicks)) {  // spread to a neighbour
+      for (const o of game.rides) if (o !== s && !o.onFire && Math.abs(o.r - s.r) <= def.h && Math.abs(o.c - s.c) <= def.w) { igniteFire(o); break; }
+    }
+    if (s.fireT <= 0) { addNews("💥 The " + def.name + " burned down!"); incident("", 0.3); destroyService(s); }
+    return;
+  }
+
+  if (s.broken) {
+    s.brokenT -= dtTicks;
+    // stranded riders grow furious while stuck on a broken ride
+    if (s.stranded) { for (const g of s.stranded) { g.happiness = clamp(g.happiness - 0.22 * dtTicks, 0, 100); if (chance(0.04 * dtTicks)) setEmote(g, "😱"); } game.reputation = clamp(game.reputation - 0.0005 * dtTicks, 0, 5); }
+    if (s.brokenT <= 0) { s.broken = false; releaseStranded(s, true); s.condition = clamp(s.condition + 20, 0, 100); }
+    return;
+  }
+  s.timer -= dtTicks;
+  if (s.busy) {
+    // a worn ride can fail mid-cycle, stranding everyone aboard
+    if (def.kind === T.RIDE && chance((1 - s.reliability) * (0.4 + (100 - s.condition) / 60) * 0.15 * dtTicks)) {
+      s.broken = true; s.brokenT = rand(70, 140); strandRiders(s);
+      incident("🛠️ The " + def.name + " broke down with riders aboard!", 0.25);
+      return;
+    }
+    if (s.timer <= 0) {
+      s.busy = false;
+      s.condition = clamp(s.condition - rand(0.3, 0.8), 0, 100);   // wear from a cycle
+      if (def.kind === T.RIDE && chance((100 - s.condition) / 100 * 0.01 + def.intensity / 9000)) igniteFire(s);
+      const cx = ccx, cy = ccy;
+      burst(cx, cy, "#ffe08a", 8, 70);
+      for (const g of s.riders) {
+        if (g.state !== "using") continue;
+        g.useTimer = 5;
+        // apply ride after-effects (only thrill rides cause nausea/fear)
+        if (def.need === "fun") {
+          const over = def.intensity - g.thrillPref;
+          g.nausea = clamp(g.nausea + def.nausea * 3.5, 0, 100);
+          g.rodeT = 80;
+          if (over > 2) { g.happiness = clamp(g.happiness - over * 3, 0, 100); setEmote(g, "😵"); }
+          else { g.happiness = clamp(g.happiness + def.excite * 2.2, 0, 100); setEmote(g, g.happiness > 70 ? "🤩" : "😄"); }
+          // water rides cool guests: cut nausea, restore energy, refresh happiness
+          if (def.cool) {
+            g.nausea = clamp(g.nausea - def.cool, 0, 100);
+            g.energy = clamp(g.energy + def.cool * 0.5, 0, 100);
+            g.happiness = clamp(g.happiness + 6, 0, 100);
+            g.thirst = clamp(g.thirst + 6, 0, 100);   // splashing about is thirsty work
+            setEmote(g, "😎");
+          }
+          if (g.nausea > 75) { setEmote(g, "🤮"); sfx("vomit"); addLitter(g.r, g.c, 30); }  // sick guests make a mess
+        }
+      }
+      s.riders = [];
+    }
+    return;
+  }
+  if (s.queue.length > 0) {
+    // small chance to break down before a cycle (worn & intense rides break more)
+    if (def.kind === T.RIDE && chance((1 - s.reliability) * (0.5 + def.intensity / 12) * (1 + (100 - s.condition) / 50))) {
+      s.broken = true; s.brokenT = rand(60, 140);
+      sfx("break");
+      floatText(ccx, ccy - 6, "Out of order", "#ff9b9b");
+      for (const g of s.queue) { g.state = "idle"; g.target = null; setEmote(g, "😤"); }
+      s.queue = [];
+      return;
+    }
+    const load = Math.min(def.cap, s.queue.length);
+    s.riders = [];
+    for (let i = 0; i < load; i++) {
+      const g = s.queue.shift();
+      if (!g || g.state !== "queuing") { i--; if (s.queue.length === 0) break; continue; }
+      const price = s.price;
+      // transaction (categorised for the ledger)
+      const incomeCat = def.kind === T.RIDE ? "rides" : def.need === "photo" ? "photos" : "shops";
+      if (def.need === "cash") { g.money += 60; gain("shops", price); }   // ATM withdrawal fee
+      else { g.money -= price; g.spent += price; gain(incomeCat, price); }
+      g.state = "using"; g.useTimer = def.dur * 10; g.ridesTaken++;
+      // need satisfaction
+      if (def.need === "hunger")  { g.hunger  = clamp(g.hunger - 65, 0, 100); g.nausea = clamp(g.nausea - 8, 0, 100); g.carryTrash++; g.ateT = 80; setEmote(g, "😋"); }
+      if (def.need === "thirst")  { g.thirst  = clamp(g.thirst - 65, 0, 100); g.bladder = clamp(g.bladder + 28, 0, 100); g.carryTrash++; g.ateT = 80; setEmote(g, "😌"); }
+      if (def.need === "bladder") { g.bladder = 0; g.happiness = clamp(g.happiness + 6, 0, 100); setEmote(g, "😮‍💨"); }
+      if (def.need === "shop")    { g.happiness = clamp(g.happiness + 5, 0, 100); setEmote(g, "🛍️"); }
+      if (def.need === "photo")   { g.happiness = clamp(g.happiness + 8, 0, 100); g.rodeT = 0; setEmote(g, "📸"); }
+      if (def.need === "cash")    setEmote(g, "💵");
+      s.served++; s.novelty = Math.max(35, 100 - s.served * 0.4);   // novelty wears off
+      if (price > 0) { floatText((s.c + def.w/2)*TILE, s.r*TILE + 6, "+$" + price); moneySfx(); }
+      s.riders.push(g);
+    }
+    if (s.riders.length) { s.busy = true; s.timer = def.dur * 10; if (def.kind === T.RIDE) sfx("ride"); }
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   7. ECONOMY / RATING / LEVELS / TIME
+---------------------------------------------------------------------------- */
+function economyTick(dtTicks) {
+  let upkeep = 0;
+  for (const s of game.rides) upkeep += (s.def.upkeep || 0);
+  for (const s of game.staff) upkeep += (s.def.wage || 0);   // staff wages
+  pay("upkeep", upkeep * 0.01 * dtTicks);
+  if (game.cash < 0) game.negTimer += dtTicks; else game.negTimer = 0;
+}
+
+function recalcRating() {
+  const guests = game.guests;
+  const avgHappy = guests.length ? guests.reduce((a, g) => a + g.happiness, 0) / guests.length : 50;
+  const rideTypes = new Set(game.rides.filter(s => s.def.kind === T.RIDE).map(s => s.key)).size;
+  let scenery = 0;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = game.tiles[r][c];
+    if (t.type === T.SCENERY && t.ax === c && t.ay === r) scenery++;
+  }
+  const clean = cleanliness();   // 0..100
+  let rating = avgHappy * 4.2 + rideTypes * 55 + Math.min(scenery, 40) * 4
+             + Math.min(game.rides.length, 25) * 3 + clean * 0.8;
+  game.rating = Math.round(clamp(rating, 0, 1000));
+}
+
+function levelForAdmissions(a) {
+  let lvl = 1;
+  for (let i = 0; i < LEVEL_REQ.length; i++) if (a >= LEVEL_REQ[i]) lvl = i + 1;
+  return lvl;
+}
+function checkLevelUp() {
+  const want = levelForAdmissions(game.admitted);
+  if (want > game.level) {
+    game.level = want;
+    onLevelUp(want);
+  }
+}
+function onLevelUp(lvl) {
+  // figure out what just unlocked
+  const newly = Object.keys(BUILDINGS).filter(k => BUILDINGS[k].level === lvl).map(k => BUILDINGS[k].icon + " " + BUILDINGS[k].name);
+  sfx("levelup");
+  for (let i = 0; i < 4; i++) setTimeout(launchFirework, i * 150);
+  toast("🎉 LEVEL " + lvl + "!" + (newly.length ? "  Unlocked: " + newly.join(", ") : ""), true);
+  buildToolbar();
+}
+
+function spawnTick(dtTicks) {
+  const hour = Math.floor(game.minutes / 60);
+  if (hour < 9 || hour >= 22) return;          // park closed at night
+  const ratePerTick = (0.01 + game.rating / 13000) * attendanceMult();   // ads & partners boost arrivals
+  game.spawnAccum += ratePerTick * dtTicks;
+  while (game.spawnAccum >= 1) {
+    game.spawnAccum -= 1;
+    if (game.guests.length < 440) spawnArrival();
+  }
+}
+
+function updateClock(dtTicks) {
+  game.minutes += MINUTES_PER_TICK * dtTicks;
+  if (game.minutes >= 24 * 60) { game.minutes -= 24 * 60; game.day++; partnersDailyPayout(); dailyTick(); }
+}
+
+/* ----------------------------------------------------------------------------
+   8. SIM STEP
+---------------------------------------------------------------------------- */
+function step(dtTicks) {
+  updateClock(dtTicks);
+  updateWeather(dtTicks);
+  spawnTick(dtTicks);
+  computeDensity();
+  for (let i = game.guests.length - 1; i >= 0; i--) updateGuest(game.guests[i], dtTicks);
+  for (const s of game.rides) updateRide(s, dtTicks);
+  for (const s of game.staff) staffStep(s, dtTicks);
+  economyTick(dtTicks);
+  recalcRating();
+}
+
+/* ----------------------------------------------------------------------------
+   9. INPUT / BUILDING
+---------------------------------------------------------------------------- */
+let dragging = false, lastBuilt = null;
+
+function screenToTile(ev) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
+  return { r: Math.floor(y / TILE), c: Math.floor(x / TILE) };
+}
+
+// Can the building anchored at (r,c) be placed? (in-bounds + all grass)
+function canPlace(r, c, def) {
+  if (!inBounds(r, c) || !inBounds(r + def.h - 1, c + def.w - 1)) return false;
+  for (const [tr, tc] of footprintTiles(r, c, def)) {
+    const t = tileAt(tr, tc);
+    if (!t || t.type !== T.GRASS) return false;
+  }
+  return true;
+}
+
+function placeTool(r, c) {
+  const toolKey = game.tool, def = BUILDINGS[toolKey];
+  if (!inBounds(r, c)) return;
+  if (toolKey === "bulldoze") { bulldoze(r, c); return; }
+  if (!isUnlocked(toolKey)) { toast(def.name + " unlocks at Level " + def.level); sfx("error"); return; }
+  if (!canPlace(r, c, def)) { return; }
+
+  const cost = freeBuild ? 0 : def.cost;
+  if (game.cash < cost) { toast("Not enough cash for " + def.name); sfx("error"); return; }
+
+  for (const [tr, tc] of footprintTiles(r, c, def)) {
+    const t = game.tiles[tr][tc];
+    t.type = def.kind; t.key = toolKey; t.ax = c; t.ay = r;
+  }
+  if (cost > 0) pay("construction", cost);
+  sfx("build");
+  if (cost > 0) floatText((c + def.w/2) * TILE, r * TILE + 4, "-$" + cost, "#ff9b9b");
+
+  if (def.kind === T.RIDE || def.kind === T.SHOP) {
+    const s = makeService(toolKey, r, c);
+    game.rides.push(s);
+    if (!s.entry) toast(def.name + " needs a path beside it!");
+  }
+  invalidatePaths();
+  if (def.kind === T.PATH) refreshServiceEntries();
+}
+
+function bulldoze(r, c) {
+  const t = tileAt(r, c);
+  if (!t || t.type === T.GRASS || t.type === T.ENTRANCE) return;
+  let anchorR = r, anchorC = c, def = t.key ? BUILDINGS[t.key] : null;
+  if (t.ax >= 0 && t.key) { anchorR = t.ay; anchorC = t.ax; }
+  if (def && def.refund) { gain("refunds", def.refund); floatText((anchorC + (def.w||1)/2) * TILE, anchorR * TILE + 4, "+$" + def.refund); }
+  sfx("bulldoze");
+  burst(c * TILE + TILE/2, r * TILE + TILE/2, "#b8a888", 9, 80);
+
+  // clear the whole footprint
+  if (def && (def.w > 1 || def.h > 1 || def.kind === T.RIDE || def.kind === T.SHOP || def.kind === T.SCENERY)) {
+    for (const [tr, tc] of footprintTiles(anchorR, anchorC, def)) {
+      const tt = tileAt(tr, tc);
+      if (tt) { tt.type = T.GRASS; tt.key = null; tt.ax = -1; tt.ay = -1; }
+    }
+  } else { t.type = T.GRASS; t.key = null; t.ax = -1; t.ay = -1; }
+
+  const si = game.rides.findIndex(s => s.r === anchorR && s.c === anchorC);
+  if (si >= 0) {
+    freeRiders(game.rides[si], false);   // never leave riders frozen on a removed ride
+    for (const g of game.rides[si].queue) { g.state = "idle"; g.target = null; }
+    if (selected && selected.ref === game.rides[si]) closeInspector();
+    game.rides.splice(si, 1);
+  }
+  invalidatePaths();
+  refreshServiceEntries();
+}
+
+function refreshServiceEntries() { for (const s of game.rides) s.entry = adjacentPathFor(s.r, s.c, s.def); }
+
+function setTool(key) {
+  if (!isUnlocked(key)) { const d = BUILDINGS[key]; toast(d.name + " unlocks at Level " + d.level); sfx("error"); return; }
+  game.tool = key;
+  document.querySelectorAll(".tool[data-tool]").forEach(el => el.classList.toggle("active", el.dataset.tool === key));
+}
+
+/* ----------------------------------------------------------------------------
+   10. CHEATS
+---------------------------------------------------------------------------- */
+const CHEATS = {
+  MONEYBAGS: g => { g.cash += 100000; return "💰 +$100,000!"; },
+  RICHASF:   g => { g.cash = 1e9; return "🤑 Cash maxed out!"; },
+  MAGICWAND: g => { freeBuild = !freeBuild; return freeBuild ? "✨ Free build ON" : "✨ Free build OFF"; },
+  HAPPYDAYS: g => { g.guests.forEach(x => { x.happiness = 100; x.nausea = 0; }); return "😀 Everyone is thrilled!"; },
+  PACKED:    g => { for (let i = 0; i < 60; i++) { spawnGuest(); g.admitted++; } checkLevelUp(); return "🧍 A crowd pours in!"; },
+  MAXRATING: g => { g.rating = 1000; return "⭐ Park rating maxed!"; },
+  SPEEDDEMON:g => { unlockedSpeed5 = true; document.getElementById("spd5").style.display = "inline-block"; return "⚡ 5x speed unlocked!"; },
+  UNLOCKALL: g => { cheatLevel = maxLevel(); buildToolbar(); return "🔓 All rides unlocked!"; },
+  LEVELUP:   g => { g.admitted = LEVEL_REQ[Math.min(g.level, LEVEL_REQ.length - 1)]; checkLevelUp(); return "⬆️ Level up!"; },
+  RAINYDAY:  g => { g.weather = { type: "rainy", t: 1200 }; reassignAttire(); return "🌧️ Here comes the rain — umbrellas out!"; },
+  HEATWAVE:  g => { g.weather = { type: "hot",   t: 1200 }; reassignAttire(); return "🥵 Heatwave! Guests want water rides."; },
+  STORM:     g => { g.weather = { type: "storm", t: 1400 }; reassignAttire(); return "⛈️ A thunderstorm rolls in — beware lightning!"; },
+  FIRE:      g => { const rs = g.rides.filter(s => s.def.kind === T.RIDE && !s.onFire); if (rs.length) igniteFire(rs[randi(0, rs.length-1)]); else return "No rides to set alight!"; return "🔥 A fire breaks out!"; },
+  VIP:       g => { spawnGuest({ vip: true }); g.admitted++; return "⭐ A celebrity arrives!"; },
+  FAMETIME:  g => { g.reputation = 5; return "🏆 Reputation maxed to 5★!"; },
+  BANKRUPT:  g => { g.cash = 0; return "💸 Cash wiped to $0."; },
+};
+function runCheat(raw) {
+  const code = raw.trim().toUpperCase().replace(/\s+/g, "");
+  if (!code) return;
+  const fn = CHEATS[code];
+  if (fn) toast(fn(game)); else toast('Unknown cheat: "' + code + '"');
+}
+function toggleCheats(force) {
+  const el = document.getElementById("cheat-console");
+  const open = force !== undefined ? force : !el.classList.contains("open");
+  el.classList.toggle("open", open);
+  if (open) { const i = document.getElementById("cheat-input"); i.value = ""; i.focus(); }
+}
+
+/* ----------------------------------------------------------------------------
+   11. RENDER
+---------------------------------------------------------------------------- */
+let STARS = [];
+function resize() {
+  canvas.width = COLS * TILE; canvas.height = ROWS * TILE;
+  STARS = [];
+  for (let i = 0; i < 80; i++) STARS.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height*0.6, p: Math.random()*6 });
+}
+
+/* ---- Camera: the big map is panned & zoomed via a CSS transform on the canvas,
+   so all the world-space drawing and the getBoundingClientRect()-based input
+   math keep working unchanged. ---- */
+let view = { zoom: 1, panX: 0, panY: 0 };
+const MIN_ZOOM = 0.2, MAX_ZOOM = 2.6;
+function applyView() {
+  canvas.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
+}
+function fitView() {
+  const wrap = document.getElementById("canvas-wrap");
+  const ww = wrap.clientWidth, wh = wrap.clientHeight;
+  view.zoom = clamp(Math.min(ww / canvas.width, wh / canvas.height) * 0.98, MIN_ZOOM, MAX_ZOOM);
+  view.panX = (ww - canvas.width * view.zoom) / 2;
+  view.panY = (wh - canvas.height * view.zoom) / 2;
+  applyView();
+}
+// Zoom keeping the world point under the cursor fixed.
+function zoomAt(clientX, clientY, factor) {
+  const wrap = document.getElementById("canvas-wrap").getBoundingClientRect();
+  const mx = clientX - wrap.left, my = clientY - wrap.top;
+  const nz = clamp(view.zoom * factor, MIN_ZOOM, MAX_ZOOM);
+  view.panX = mx - (mx - view.panX) * (nz / view.zoom);
+  view.panY = my - (my - view.panY) * (nz / view.zoom);
+  view.zoom = nz;
+  applyView();
+}
+function darkness() {
+  const h = game.minutes / 60;
+  const d = 0.5 - 0.5 * Math.cos((h - 1) / 24 * Math.PI * 2);
+  return clamp(d * 0.62, 0, 0.62);
+}
+function drawGlyph(icon, cx, cy, size, rot = 0, scale = 1) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  if (rot) ctx.rotate(rot);
+  if (scale !== 1) ctx.scale(scale, scale);
+  ctx.font = size + "px serif";
+  ctx.fillText(icon, 0, 1);
+  ctx.restore();
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Draw one ride/shop/scenery across its footprint (anchor only).
+function drawService(t, r, c) {
+  const def = BUILDINGS[t.key];
+  const x = c * TILE, y = r * TILE, w = def.w * TILE, h = def.h * TILE;
+  const cx = x + w / 2, cy = y + h / 2;
+  const s = serviceCovering(r, c);
+  const busy = s && s.busy;
+  const sz = Math.min(w, h) * 0.66 + 9;
+
+  // platform pad for built structures (not scenery)
+  if (def.kind === T.RIDE || def.kind === T.SHOP) {
+    ctx.fillStyle = def.kind === T.RIDE ? COLORS.ridePad : COLORS.shopPad;
+    roundRect(x + 2, y + 2, w - 4, h - 4, 6); ctx.fill();
+    ctx.strokeStyle = "#0004"; ctx.lineWidth = 1; roundRect(x + 2, y + 2, w - 4, h - 4, 6); ctx.stroke();
+  }
+
+  if (s && s.onFire) {
+    drawGlyph(def.icon, cx, cy, sz, 0, 0.9);
+    drawGlyph("🔥", cx, cy - 2, sz * 0.8 + Math.sin(animT * 14) * 2);
+    return;
+  }
+  if (s && s.broken) {
+    drawGlyph(def.icon, cx, cy, sz, 0, 0.92);
+    drawGlyph("🚧", cx + w * 0.25, cy - h * 0.2, sz * 0.55);
+    return;
+  }
+  if (t.key === "volcano" && busy && chance(0.4)) {
+    particles.push({ kind: "spark", x: cx + rand(-6, 6), y: y + 4, vx: rand(-20, 20), vy: rand(-90, -40), life: rand(0.5, 1.1), max: 1.1, color: chance(0.5) ? "#ff5a2a" : "#ffce4a", size: rand(2, 4) });
+  }
+
+  if (t.key === "ferris")        drawGlyph(def.icon, cx, cy, sz, animT * (busy ? 2.2 : 0.5));
+  else if (t.key === "carousel" || t.key === "teacups" || t.key === "ufo" || t.key === "skysphere" || t.key === "orbit") drawGlyph(def.icon, cx, cy, sz, animT * (busy ? 3.6 : 0.7));
+  else if (t.key === "droptower" || t.key === "spacetower" || t.key === "aurora") {
+    const off = busy ? Math.sin(animT * 7) * (h * 0.18) : Math.sin(animT * 1.5) * 2;
+    drawGlyph(def.icon, cx, cy + off, sz);
+  } else if (t.key === "helipad" || t.key === "balloon") {
+    const lift = busy ? -Math.abs(Math.sin(animT * 2.2)) * (h * 0.22) : Math.sin(animT * 2) * 1.5;
+    drawGlyph(def.icon, cx, cy + lift, sz, Math.sin(animT * 4) * 0.05);
+  } else if (t.key === "pirate") {
+    drawGlyph(def.icon, cx, cy, sz, Math.sin(animT * (busy ? 4 : 1.2)) * 0.35);
+  } else if (t.key === "coaster" || t.key === "gokarts" || t.key === "logflume" || t.key === "zipline" || t.key === "cablecar" || t.key === "monorail" || t.key === "giga") {
+    const pulse = busy ? 1 + 0.07 * Math.sin(animT * 9) : 1;
+    drawGlyph(def.icon, cx, cy, sz, 0, pulse);
+    if (busy) { const px = cx + Math.cos(animT * 6) * (w * 0.28); const py = cy - 4 + Math.sin(animT * 12) * 3;
+      ctx.fillStyle = "#ff5252"; ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI*2); ctx.fill(); }
+  } else if (def.kind === T.SCENERY) {
+    const sway = Math.sin(animT * 1.5 + (r + c)) * 0.06;
+    drawGlyph(def.icon, cx, cy, sz, def.key === "fountain" ? 0 : sway, 1);
+  } else {
+    drawGlyph(def.icon, cx, cy, sz, 0, busy ? 1 + 0.05 * Math.sin(animT * 8) : 1);
+  }
+}
+
+function render() {
+  const dark = darkness();
+
+  // ground
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = game.tiles[r][c], x = c * TILE, y = r * TILE;
+    if (t.type === T.PATH) {
+      if (t.key === "bridge") {
+        ctx.fillStyle = "#8a5a36"; ctx.fillRect(x, y, TILE, TILE);
+        ctx.strokeStyle = "#6e4527"; ctx.lineWidth = 1; ctx.beginPath();
+        for (let py = y + 5; py < y + TILE; py += 6) { ctx.moveTo(x, py); ctx.lineTo(x + TILE, py); }
+        ctx.stroke();
+        ctx.fillStyle = "#5c3a20"; ctx.fillRect(x, y, TILE, 3); ctx.fillRect(x, y + TILE - 3, TILE, 3);  // rails
+      } else {
+        ctx.fillStyle = COLORS.path; ctx.fillRect(x, y, TILE, TILE);
+        ctx.fillStyle = COLORS.pathEdge; ctx.fillRect(x, y, TILE, 2); ctx.fillRect(x, y, 2, TILE);
+      }
+      // litter specks — more dots the dirtier the tile
+      if (t.litter > 6) {
+        const dots = Math.min(8, Math.floor(t.litter / 12));
+        ctx.fillStyle = "#5b4a2e";
+        for (let i = 0; i < dots; i++) {
+          const lx = x + 5 + ((i * 7 + (r * 13 + c * 7) % 11)) % (TILE - 9);
+          const ly = y + 6 + ((i * 11 + (r * 5 + c * 3) % 13)) % (TILE - 11);
+          ctx.fillRect(lx, ly, 2, 2);
+        }
+      }
+    } else if (t.type === T.ENTRANCE) { ctx.fillStyle = COLORS.entrance; ctx.fillRect(x, y, TILE, TILE); }
+    else { ctx.fillStyle = (r + c) % 2 ? COLORS.grass : COLORS.grassAlt; ctx.fillRect(x, y, TILE, TILE); }
+  }
+
+  // grid
+  ctx.strokeStyle = COLORS.grid; ctx.lineWidth = 1; ctx.beginPath();
+  for (let c = 0; c <= COLS; c++) { ctx.moveTo(c*TILE, 0); ctx.lineTo(c*TILE, ROWS*TILE); }
+  for (let r = 0; r <= ROWS; r++) { ctx.moveTo(0, r*TILE); ctx.lineTo(COLS*TILE, r*TILE); }
+  ctx.stroke();
+
+  // hover highlight + footprint ghost
+  if (inBounds(hover.r, hover.c)) {
+    const tool = game.tool, def = BUILDINGS[tool];
+    if (tool === "bulldoze") {
+      const tt = game.tiles[hover.r][hover.c];
+      const ok = tt.type !== T.GRASS && tt.type !== T.ENTRANCE;
+      const tint = ok ? "#ff5b5b" : "#ffffff";
+      ctx.fillStyle = tint + "22"; ctx.fillRect(hover.c*TILE, hover.r*TILE, TILE, TILE);
+      ctx.strokeStyle = tint + "cc"; ctx.lineWidth = 2; ctx.strokeRect(hover.c*TILE+1, hover.r*TILE+1, TILE-2, TILE-2);
+    } else {
+      const ok = canPlace(hover.r, hover.c, def) && isUnlocked(tool) && (freeBuild || game.cash >= def.cost);
+      const tint = ok ? "#5bff9b" : "#ff5b5b";
+      const w = def.w * TILE, h = def.h * TILE, x = hover.c * TILE, y = hover.r * TILE;
+      ctx.fillStyle = tint + "22"; ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = tint + "cc"; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      ctx.globalAlpha = 0.5; drawGlyph(def.icon, x + w/2, y + h/2, Math.min(w,h)*0.66 + 6); ctx.globalAlpha = 1;
+    }
+  }
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+
+  // buildings (anchor tiles only) + entrance
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = game.tiles[r][c];
+    if (t.key && t.type !== T.PATH && t.ax === c && t.ay === r) drawService(t, r, c);
+    else if (t.type === T.ENTRANCE) { const bob = Math.sin(animT * 3) * 1.5; drawGlyph("🎪", c*TILE + TILE/2, r*TILE + TILE/2 + bob, TILE - 6); }
+  }
+
+  // night glow on rides/shops + entrance + lamps
+  if (dark > 0.18) {
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    const glow = (cx, cy, rad, intensity) => {
+      const g = ctx.createRadialGradient(cx, cy, 2, cx, cy, rad);
+      g.addColorStop(0, `rgba(255,220,120,${intensity})`); g.addColorStop(1, "rgba(255,220,120,0)");
+      ctx.fillStyle = g; ctx.fillRect(cx - rad, cy - rad, rad*2, rad*2);
+    };
+    for (const s of game.rides) { const tw = 0.5 + 0.5*Math.sin(animT*4 + s.r + s.c);
+      glow((s.c + s.def.w/2)*TILE, (s.r + s.def.h/2)*TILE, TILE*1.1, 0.26*dark*(0.6 + tw*0.4)); }
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const t = game.tiles[r][c];
+      if (t.key && BUILDINGS[t.key].light && t.ax === c && t.ay === r) glow(c*TILE + TILE/2, r*TILE + TILE/2, TILE*0.9, 0.4*dark);
+    }
+    ctx.restore();
+  }
+
+  // queue badges + unconnected warnings
+  ctx.font = "10px sans-serif";
+  for (const s of game.rides) {
+    if (s.queue.length > 0) {
+      const x = (s.c + s.def.w)*TILE - 7, y = s.r*TILE + 8;
+      ctx.fillStyle = "#0009"; ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.fillText(s.queue.length, x, y + 0.5);
+    }
+    if (!s.entry && !s.def.show) { const blink = 0.5 + 0.5*Math.sin(animT*6); ctx.globalAlpha = 0.4 + blink*0.6;
+      drawGlyph("⚠️", (s.c + s.def.w/2)*TILE, (s.r + s.def.h/2)*TILE, TILE - 6); ctx.globalAlpha = 1; }
+  }
+
+  // selection highlight on inspected ride
+  if (selected && selected.type === "service" && game.rides.includes(selected.ref)) {
+    const s = selected.ref, d = 2 + Math.sin(animT*5);
+    ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 2.5;
+    ctx.strokeRect(s.c*TILE - d, s.r*TILE - d, s.def.w*TILE + d*2, s.def.h*TILE + d*2);
+  }
+
+  // guests
+  let emotesDrawn = 0;
+  for (const g of game.guests) {
+    const moving = g.state === "walking" || g.state === "leaving";
+    const bob = moving ? Math.sin(animT*9 + g.phase)*1.6 : Math.sin(animT*2 + g.phase)*0.6;
+    const gy = g.y + bob;
+    ctx.fillStyle = "#00000022"; ctx.beginPath(); ctx.ellipse(g.x, g.y + 5, 4, 1.8, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = g.color; ctx.beginPath(); ctx.arc(g.x, gy, 5, 0, Math.PI*2); ctx.fill();
+    if (g.happiness < 30) { ctx.strokeStyle = "#ff3b3b"; ctx.lineWidth = 1.5; ctx.stroke(); }
+    // seasonal attire (umbrella, sunhat, scarf…) sits beside the guest
+    if (g.attire) drawGlyph(g.attire, g.x + 6, gy - 5, 11);
+    if (g.vip) { ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(g.x, gy, 7, 0, Math.PI*2); ctx.stroke(); drawGlyph("⭐", g.x - 6, gy - 7, 11); }
+    if (g.emote && g.emoteT > 0 && emotesDrawn < 65) { emotesDrawn++; drawGlyph(g.emote, g.x, gy - 13, 13); }
+  }
+
+  // staff (icon discs that patrol the paths)
+  for (const s of game.staff) {
+    const bob = Math.sin(animT * 7 + s.phase) * 1.4;
+    ctx.fillStyle = "#00000022"; ctx.beginPath(); ctx.ellipse(s.x, s.y + 6, 5, 2, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = s.def.color; ctx.beginPath(); ctx.arc(s.x, s.y + bob, 7, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#0006"; ctx.lineWidth = 1; ctx.stroke();
+    drawGlyph(s.def.icon, s.x, s.y + bob, 11);
+  }
+
+  // selected guest ring
+  if (selected && selected.type === "guest") {
+    const g = selected.ref;
+    if (game.guests.includes(g)) { ctx.strokeStyle = "#7bd0ff"; ctx.lineWidth = 2;
+      const rr = 8 + Math.sin(animT*6)*2; ctx.beginPath(); ctx.arc(g.x, g.y, rr, 0, Math.PI*2); ctx.stroke(); }
+    else closeInspector();
+  }
+
+  drawParticles();
+
+  // lightning flash
+  if (game.flashT > 0) { ctx.fillStyle = `rgba(255,255,255,${clamp(game.flashT, 0, 0.5) * 0.8})`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+
+  // (night no longer dims the play area — the screen stays bright; we keep the
+  //  warm ride/lamp glows above for ambiance and fireworks at night.)
+
+  updateHUD();
+  if (selected) updateInspector();
+  if (manageTab === "ledger" && animT - ledgerT > 0.5) { ledgerT = animT; renderManagePanel(); }
+  if (animT - moodsT > 0.5) { moodsT = animT; updateMoods(); }
+  if (animT - advisorT > 1.2) { advisorT = animT; updateAdvice(); }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const a = clamp(p.life / p.max, 0, 1);
+    if (p.kind === "text") {
+      ctx.globalAlpha = a; ctx.font = "bold 12px sans-serif";
+      ctx.fillStyle = "#000a"; ctx.fillText(p.text, p.x + 0.7, p.y + 0.7);
+      ctx.fillStyle = p.color; ctx.fillText(p.text, p.x, p.y);
+    } else if (p.kind === "spark") {
+      ctx.globalAlpha = a; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    } else if (p.kind === "rocket") {
+      ctx.globalAlpha = 1; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 2.2, 0, Math.PI*2); ctx.fill();
+    } else if (p.kind === "rain") {
+      ctx.globalAlpha = 0.45; ctx.strokeStyle = "#9cc7ff"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - 2, p.y + 9); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function updateHUD() {
+  const cashEl = document.getElementById("cash");
+  cashEl.textContent = fmtMoney(game.cash); cashEl.classList.toggle("neg", game.cash < 0);
+  document.getElementById("guests").textContent = game.guests.length;
+  document.getElementById("rating").textContent = game.rating;
+  const h = Math.floor(game.minutes/60), m = Math.floor(game.minutes%60);
+  const open = h >= 9 && h < 22;
+  document.getElementById("clock").textContent =
+    (darkness() > 0.35 ? "🌙 " : "☀️ ") + game.day + " · " + String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + (open ? "" : " (closed)");
+  document.getElementById("weather").textContent = weatherDef().icon + " " + weatherDef().name;
+  const rep = game.reputation || 0, full = Math.round(rep);
+  document.getElementById("reputation").textContent = "★★★★★".slice(0, full) + "☆☆☆☆☆".slice(0, 5 - full) + " " + rep.toFixed(1);
+  // level bar
+  document.getElementById("lvl-num").textContent = game.level;
+  const lvl = game.level;
+  if (lvl >= maxLevel()) {
+    document.getElementById("lvl-next").textContent = "MAX";
+    document.getElementById("lvl-fill").style.width = "100%";
+  } else {
+    const prev = LEVEL_REQ[lvl - 1], next = LEVEL_REQ[lvl];
+    document.getElementById("lvl-next").textContent = game.admitted + "/" + next + " 🧍";
+    document.getElementById("lvl-fill").style.width = clamp((game.admitted - prev) / (next - prev) * 100, 0, 100) + "%";
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   11c. LIVE GUEST-MOODS DASHBOARD
+---------------------------------------------------------------------------- */
+// Each guest's single dominant feeling — problems first so the most urgent,
+// fixable issues bubble to the top of the dashboard.
+const MOOD_DEFS = {
+  stuck:        { e:"😱", l:"Stranded!",      c:"#ff4d4d" },
+  sick:         { e:"🤮", l:"Feeling sick",   c:"#7bbf5a" },
+  unhappy:      { e:"😠", l:"Unhappy",        c:"#ff6b6b" },
+  toilet:       { e:"🚽", l:"Need restroom",  c:"#caa24a" },
+  thirsty:      { e:"🥵", l:"Thirsty",        c:"#46a7e0" },
+  hungry:       { e:"🍔", l:"Hungry",         c:"#e8a13a" },
+  dirty:        { e:"🤧", l:"Area too dirty",  c:"#9b8b6a" },
+  crowded:      { e:"😖", l:"Too crowded",    c:"#b08bff" },
+  tired:        { e:"😴", l:"Tired",          c:"#8893ac" },
+  broke:        { e:"🏧", l:"Low on cash",    c:"#9be07a" },
+  queuing:      { e:"🎟️", l:"In a queue",     c:"#7bd0ff" },
+  riding:       { e:"🎢", l:"On a ride",      c:"#5bd98a" },
+  delighted:    { e:"🤩", l:"Delighted",      c:"#ffd166" },
+  happy:        { e:"😄", l:"Having fun",     c:"#5bd98a" },
+  content:      { e:"🙂", l:"Content",        c:"#aeb8cf" },
+  leaving_sad:  { e:"😤", l:"Leaving upset",  c:"#ff6b6b" },
+  leaving_happy:{ e:"👋", l:"Leaving happy",  c:"#9be07a" },
+};
+function moodOf(g) {
+  if (g.stuck) return "stuck";
+  if (g.state === "leaving") return g.happiness < 35 ? "leaving_sad" : "leaving_happy";
+  if (g.nausea > 60)  return "sick";
+  if (g.happiness < 25) return "unhappy";
+  if (g.bladder > 78) return "toilet";
+  if (g.thirst > 75)  return "thirsty";
+  if (g.hunger > 75)  return "hungry";
+  if (g.dirty > 150)  return "dirty";
+  if (g.crowd > 9)    return "crowded";
+  if (g.energy < 20)  return "tired";
+  if (g.money < 12)   return "broke";
+  if (g.state === "using") return "riding";
+  if (g.state === "queuing") return "queuing";
+  if (g.rodeT > 0 || g.ateT > 0) return "delighted";
+  if (g.happiness > 78) return "happy";
+  return "content";
+}
+function updateMoods() {
+  const body = document.getElementById("moods-body");
+  if (!body) return;
+  const counts = {};
+  for (const g of game.guests) { const k = moodOf(g); counts[k] = (counts[k] || 0) + 1; }
+  const total = game.guests.length;
+  const sub = document.getElementById("moods-sub");
+  if (!total) { body.innerHTML = '<div class="mrow"><span class="lt" style="color:#8893ac">No guests yet…</span></div>'; if (sub) sub.textContent = ""; return; }
+  if (sub) sub.textContent = total + " guests";
+  const rows = Object.keys(counts).map(k => ({ k, n: counts[k] })).sort((a, b) => b.n - a.n).slice(0, 9);
+  const maxN = rows[0].n;
+  body.innerHTML = rows.map(r => {
+    const d = MOOD_DEFS[r.k];
+    return `<div class="mrow"><div class="mfill" style="width:${Math.round(r.n / maxN * 100)}%;background:${d.c}"></div>`
+      + `<span class="le">${d.e}</span><span class="lt">${d.l}</span><span class="mn">${r.n}</span></div>`;
+  }).join("");
+}
+
+/* ----------------------------------------------------------------------------
+   11d. ADVISOR — actionable hints on what to build to lift ratings & moods
+---------------------------------------------------------------------------- */
+function computeAdvice() {
+  const out = [], rides = game.rides, n = game.guests.length;
+  const add = (sev, e, t, pri) => out.push({ sev, e, t, pri });
+  const has = need => rides.some(s => s.def.need === need);
+
+  // --- urgent / structural ---
+  const unconnected = rides.filter(s => !s.entry && !s.def.show).length;
+  if (unconnected) add("bad", "⚠️", unconnected + (unconnected > 1 ? " attractions aren't" : " attraction isn't") + " connected to a path — guests can't reach " + (unconnected > 1 ? "them" : "it") + ".", 100);
+  const onFire = rides.filter(s => s.onFire).length;
+  if (onFire && !game.staff.some(s => s.type === "firefighter")) add("bad", "🔥", "A ride is on fire — hire a Firefighter immediately!", 99);
+  if (game.cash < 0) add("bad", "💸", "You're in the red — raise ticket prices or cut upkeep/marketing.", 96);
+  const broken = rides.filter(s => s.broken).length;
+  if (broken > 0 && !game.staff.some(s => s.type === "mechanic")) add("bad", "🔧", broken + " ride" + (broken > 1 ? "s have" : " has") + " broken down — hire a Mechanic.", 92);
+  if (rides.filter(s => s.def.kind === T.RIDE).length === 0) add("warn", "🎠", "Build your first ride to start attracting guests!", 90);
+
+  // --- guest needs (fraction of the crowd feeling each thing) ---
+  if (n >= 5) {
+    let thirsty=0, hungry=0, toilet=0, tired=0, broke=0, sick=0, crowded=0, wantThrill=0, wantGentle=0;
+    for (const g of game.guests) {
+      if (g.thirst > 70) thirsty++; if (g.hunger > 70) hungry++; if (g.bladder > 75) toilet++;
+      if (g.energy < 22) tired++; if (g.money < 14) broke++; if (g.nausea > 55) sick++;
+      if (g.crowd > 9) crowded++;
+      if (g.thrillPref > 7) wantThrill++; if (g.thrillPref < 3) wantGentle++;
+    }
+    const f = x => x / n, pct = x => Math.round(f(x) * 100);
+    if (f(thirsty) > 0.12) add("warn", "🥤", (has("thirst") ? "Build more Drink Stands" : "Build a Drink Stand") + " — " + pct(thirsty) + "% of guests are thirsty.", 60 + f(thirsty) * 70);
+    if (f(hungry) > 0.12) add("warn", "🍔", (has("hunger") ? "Add more food outlets" : "Build a Food Stall") + " — " + pct(hungry) + "% are hungry.", 60 + f(hungry) * 70);
+    if (f(toilet) > 0.10) add(has("bladder") ? "warn" : "bad", "🚻", (has("bladder") ? "Add more Restrooms" : "Build Restrooms") + " — " + pct(toilet) + "% need the loo.", 72 + f(toilet) * 70);
+    if (f(sick) > 0.12) add("warn", "🤮", pct(sick) + "% feel queasy — add gentle/water rides or Ice Cream (eases nausea).", 58 + f(sick) * 60);
+    if (f(tired) > 0.15) add("tip", "🪑", "Place Benches so tired guests can rest.", 50 + f(tired) * 40);
+    if (f(broke) > 0.12) add(has("cash") ? "tip" : "warn", "🏧", has("cash") ? "Guests are short on cash — they may need more ATMs." : "Build a Cash Machine so broke guests keep spending.", 55 + f(broke) * 40);
+    if (f(crowded) > 0.15) add("warn", "🧍", "It's crowded — widen paths or add attractions to spread guests out.", 55 + f(crowded) * 40);
+    if (f(wantThrill) > 0.2) { const maxInt = Math.max(0, ...rides.filter(s => s.def.kind === T.RIDE).map(s => s.def.intensity)); if (maxInt < 7) add("tip", "🎢", "Thrill-seekers want a bigger ride — build something intense.", 52); }
+    if (f(wantGentle) > 0.2 && !rides.some(s => s.def.kind === T.RIDE && s.def.intensity <= 3)) add("tip", "🎠", "Families want gentle rides — add a calm attraction.", 52);
+  }
+
+  // --- park quality & rating ---
+  const clean = cleanliness();
+  if (clean < 65) add(clean < 45 ? "bad" : "warn", "🧹", "Paths are getting littered — hire Janitors to keep it clean.", 50 + (65 - clean));
+  let scenery = 0;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const t = game.tiles[r][c]; if (t.type === T.SCENERY && t.ax === c && t.ay === r) scenery++; }
+  if (scenery < 8 && rides.length > 2) add("tip", "🌳", "Add scenery (trees, flowers, fountains) to lift mood & rating.", 40);
+  const rideTypes = new Set(rides.filter(s => s.def.kind === T.RIDE).map(s => s.key)).size;
+  if (rideTypes > 0 && rideTypes < 3 && game.cash > 1000) add("tip", "🎡", "Add more variety of rides — variety boosts your rating.", 45);
+  const busiest = rides.filter(s => s.def.kind === T.RIDE).sort((a, b) => b.queue.length - a.queue.length)[0];
+  if (busiest && busiest.queue.length > 8) add("tip", "⏳", "The " + busiest.def.name + " has a long queue — build another big ride.", 48);
+  if (game.reputation < 3 && n > 3) add("warn", "⭐", "Reputation is low — fixing the issues above will win guests back.", 56);
+  if (rides.length > 4 && !game.staff.some(s => s.type === "mechanic")) add("tip", "🔧", "Hire a Mechanic to keep your growing collection of rides running.", 42);
+
+  out.sort((a, b) => b.pri - a.pri);
+  return out;
+}
+function updateAdvice() {
+  const body = document.getElementById("advisor-body"); if (!body) return;
+  const adv = computeAdvice(), sub = document.getElementById("advisor-sub");
+  if (!adv.length) { body.innerHTML = '<div class="arow"><span class="ae">✅</span><span class="at">Your park is running beautifully — keep expanding!</span></div>'; if (sub) sub.textContent = ""; return; }
+  if (sub) sub.textContent = adv.length + " tip" + (adv.length > 1 ? "s" : "");
+  body.innerHTML = adv.slice(0, 6).map(a => `<div class="arow ${a.sev}"><span class="ae">${a.e}</span><span class="at">${a.t}</span></div>`).join("");
+}
+
+/* ----------------------------------------------------------------------------
+   12. INSPECTOR
+---------------------------------------------------------------------------- */
+const inspEl = () => document.getElementById("inspector");
+function closeInspector() { selected = null; inspEl().style.display = "none"; }
+function selectGuest(g) { selected = { type: "guest", ref: g }; inspEl().style.display = "block"; sfx("select"); updateInspector(); }
+function selectService(s) { selected = { type: "service", ref: s }; inspEl().style.display = "block"; sfx("select"); updateInspector(); }
+
+function bar(label, val, color) {
+  return `<div class="bar"><div class="row"><span>${label}</span><span>${Math.round(val)}%</span></div>
+    <div class="track"><div class="fill" style="width:${clamp(val,0,100)}%;background:${color}"></div></div></div>`;
+}
+// Rich, plannable guest thoughts. The most urgent/relevant feeling wins, so the
+// inspector tells you WHY a guest is happy or unhappy — and what to build next.
+function guestThought(g) {
+  if (g.stuck) return "Help! I'm stuck on this broken ride! 😱";
+  if (g.state === "using") return "Wheee! This ride is amazing! 🎢";
+  if (g.state === "queuing") {
+    const s = serviceAt(g.target.r, g.target.c);
+    if (s && s.queue.length > 6) return "This queue is so long… 😮‍💨";
+    return "Can't wait for this ride! 🎟️";
+  }
+  if (g.state === "leaving") return g.happiness < 30 ? "I'm not having fun. I'm leaving! 😤" : "What a great day! Heading home. 👋";
+
+  // --- urgent discomforts (build/fix these!) ---
+  if (g.nausea > 70)  return "Ugh… I feel really sick. 🤮";
+  if (g.bladder > 80) return "I really need a restroom! 🚻";
+  if (g.thirst > 80)  return "I'm parched — I need a drink! 🥤";
+  if (g.hunger > 80)  return "I'm starving! Where's the food? 🍔";
+  if (g.dirty > 170)  return "This place is filthy! So much litter. 🤧";
+  if (g.crowd > 10)   return "It's way too crowded here! 😖";
+  if (g.energy < 20)  return "I'm exhausted… I need a bench. 😴";
+  if (g.money < 12)   return "I'm nearly broke — need a cash machine. 🏧";
+
+  // --- recent satisfaction (positive feedback) ---
+  if (g.ateT > 0)  return "Mmm, that was tasty! 😋";
+  if (g.rodeT > 0) return g.happiness > 70 ? "That ride was awesome! 🤩" : "That was fun! 😄";
+
+  // --- mild wants ---
+  if (g.hunger > 55) return "I could go for a snack soon. 🍿";
+  if (g.thirst > 55) return "Getting a bit thirsty. 🥤";
+  if (g.dirty > 90)  return "It's a little messy around here. 🧹";
+  if (g.crowd > 7)   return "Bit of a crowd today. 🧍🧍";
+  if (g.happiness < 30) return "This park could be better…";
+  if (!game.rides.length) return "There's nothing to do here yet…";
+
+  // --- contentment / desires ---
+  if (g.happiness > 80) return "I'm having a wonderful time! 🥰";
+  return g.thrillPref > 7 ? "I want something EXTREME to ride! 🎢"
+       : g.thrillPref < 3 ? "Something gentle would be lovely. 🎠"
+       : "What should I ride next? 🤔";
+}
+
+function updateInspector() {
+  if (!selected) return;
+  const el = inspEl();
+  if (selected.type === "guest") {
+    const g = selected.ref;
+    if (!game.guests.includes(g)) { closeInspector(); return; }
+    const pref = g.thrillPref > 7 ? "Thrill-seeker" : g.thrillPref < 3 ? "Timid" : "Average";
+    el.innerHTML = `<span class="close" onclick="closeInspector()">✕</span>
+      <h3><span style="color:${g.color}">●</span> ${ageIcon(g.age)} ${g.name} ${g.vip ? "⭐" : ""}</h3>
+      <div class="sub">${g.vip ? g.title + " · " : ""}${({idle:"Wandering",walking:"Heading somewhere",queuing:"In a queue",using:"On a ride!",leaving:"Leaving the park"})[g.state] || g.state} · ${pref}${g.groupId ? " · 👨‍👩‍👧 group" : ""}</div>
+      ${bar("Happiness", g.happiness, "#5bd98a")}
+      ${bar("Hunger", g.hunger, "#e8a13a")}
+      ${bar("Thirst", g.thirst, "#46a7e0")}
+      ${bar("Bladder", g.bladder, "#caa24a")}
+      ${bar("Energy", g.energy, "#b08bff")}
+      ${bar("Nausea", g.nausea, "#7bbf5a")}
+      <div class="kv"><span>💵 Wallet</span><b>${fmtMoney(g.money)}</b></div>
+      <div class="kv"><span>🎟️ Rides taken</span><b>${g.ridesTaken}</b></div>
+      <div class="kv"><span>🛒 Spent here</span><b>${fmtMoney(g.spent)}</b></div>
+      <div class="thought">“${guestThought(g)}”</div>`;
+  } else {
+    const s = selected.ref;
+    if (!game.rides.includes(s)) { closeInspector(); return; }
+    const def = s.def;
+    const isRide = def.kind === T.RIDE;
+    const cls = thrillClass(def.intensity);
+    const status = s.onFire ? "🔥 ON FIRE — send a firefighter!" : !s.entry && !def.show ? "⚠️ Not connected to a path!" : s.broken ? "🚧 Broken down — needs a mechanic" : def.show ? "🎆 Evening show stage" : s.busy ? "Running a cycle… 🎉" : "Open & waiting";
+    const condBar = isRide && !def.show ? bar("🔧 Condition", s.condition, s.condition > 50 ? "#5bd98a" : s.condition > 25 ? "#e8a13a" : "#ff6b6b") : "";
+    const ratings = isRide ? `<div style="margin:6px 0">
+        <span class="tag ${cls}">${cls.toUpperCase()}</span>
+      </div>
+      <div class="kv"><span>🎉 Excitement</span><b>${def.excite}/10</b></div>
+      <div class="kv"><span>⚡ Intensity</span><b>${def.intensity}/10</b></div>
+      <div class="kv"><span>🤢 Nausea</span><b>${def.nausea}/10</b></div>` : "";
+    const pricer = def.price >= 0 && def.need !== "cash" && !(def.kind===T.SHOP && def.price===0) ? `<div class="pricer">
+        <span>🎫 Price</span>
+        <button onclick="adjustPrice(-1)">–</button>
+        <span class="val">${fmtMoney(s.price)}</span>
+        <button onclick="adjustPrice(1)">+</button>
+      </div>` : "";
+    el.innerHTML = `<span class="close" onclick="closeInspector()">✕</span>
+      <h3>${def.icon} ${def.name}</h3>
+      <div class="sub">${status} · ${def.w}×${def.h}</div>
+      ${bar("Popularity", clamp(s.novelty - s.queue.length*4, 0, 100), "#ffd166")}
+      ${condBar}
+      ${ratings}
+      <div class="kv"><span>🧍 In queue</span><b>${s.queue.length}</b></div>
+      <div class="kv"><span>✅ Total served</span><b>${s.served}</b></div>
+      <div class="kv"><span>💰 Revenue</span><b>${fmtMoney(s.served * (def.need==="cash"?def.price:s.price))}</b></div>
+      <div class="kv"><span>🔧 Upkeep</span><b>${fmtMoney(def.upkeep||0)}/hr</b></div>
+      ${pricer}
+      <button class="demolish" onclick="demolishSelected()">🧨 Demolish (refund ${fmtMoney(def.refund||0)})</button>`;
+  }
+}
+function adjustPrice(delta) {
+  if (selected && selected.type === "service") {
+    selected.ref.price = clamp(selected.ref.price + delta, 0, 999);
+    sfx("select"); updateInspector();
+  }
+}
+function demolishSelected() {
+  if (selected && selected.type === "service") { const s = selected.ref; bulldoze(s.r, s.c); closeInspector(); }
+}
+window.closeInspector = closeInspector;
+window.demolishSelected = demolishSelected;
+window.adjustPrice = adjustPrice;
+
+/* ----------------------------------------------------------------------------
+   12b. MANAGE MODAL — Staff & Marketing panels
+---------------------------------------------------------------------------- */
+let manageTab = null;
+function openManage(tab) { manageTab = tab; document.getElementById("modal-overlay").classList.add("open"); renderManagePanel(); }
+function closeModal() { manageTab = null; document.getElementById("modal-overlay").classList.remove("open"); }
+
+function renderManagePanel() {
+  if (!manageTab) return;
+  const m = document.getElementById("modal");
+  if (manageTab === "staff") {
+    let wage = 0; game.staff.forEach(s => wage += s.def.wage);
+    let html = `<span class="mclose" onclick="closeModal()">✕</span>
+      <h2>👷 Staff</h2>
+      <div class="modal-sub">Hire crew to keep guests happy. Wages are paid continuously while they work. Total wage: <b>${fmtMoney(wage)}/hr</b> · On staff: <b>${game.staff.length}</b></div>`;
+    for (const key in STAFF_TYPES) {
+      const def = STAFF_TYPES[key];
+      const count = game.staff.filter(s => s.type === key).length;
+      html += `<div class="card">
+        <span class="cico">${def.icon}</span>
+        <div class="cmain"><div class="ct">${def.name} <span class="cnt">×${count}</span></div>
+          <div class="cd">${def.tip}<br>Hire $${def.hire} · wage $${def.wage}/hr</div></div>
+        ${count > 0 ? `<span class="cbtn ghost" onclick="fireStaff(${firstStaffId(key)})">Fire</span>` : ""}
+        <span class="cbtn" onclick="hireStaff('${key}')">Hire</span>
+      </div>`;
+    }
+    m.innerHTML = html;
+  } else if (manageTab === "marketing") {
+    let html = `<span class="mclose" onclick="closeModal()">✕</span>
+      <h2>📣 Marketing &amp; Partnerships</h2>
+      <div class="modal-sub">Current attendance boost: <b>×${attendanceMult().toFixed(2)}</b></div>
+      <h3 class="sect">Advertising Campaigns (one-off)</h3>`;
+    if (game.campaign) {
+      const c = CAMPAIGNS[game.campaign.key];
+      html += `<div class="card active-camp"><span class="cico">${c.icon}</span>
+        <div class="cmain"><div class="ct">${c.name} — running</div>
+        <div class="cd">×${c.mult} attendance · ${Math.ceil(game.campaign.t)}s remaining</div></div></div>`;
+    }
+    for (const key in CAMPAIGNS) {
+      const c = CAMPAIGNS[key];
+      const dis = game.campaign ? " disabled" : "";
+      html += `<div class="card"><span class="cico">${c.icon}</span>
+        <div class="cmain"><div class="ct">${c.name}</div>
+          <div class="cd">${c.tip}<br>×${c.mult} attendance for ${c.secs}s</div></div>
+        <span class="cbtn${dis}" onclick="startCampaign('${key}')">$${c.cost}</span></div>`;
+    }
+    html += `<h3 class="sect">Partnership Deals (ongoing, daily)</h3>`;
+    for (const key in PARTNERS) {
+      const p = PARTNERS[key], on = !!game.partners[key];
+      const money = p.daily >= 0 ? `+$${p.daily}/day` : `−$${-p.daily}/day`;
+      const att = p.attend > 1 ? ` · +${Math.round((p.attend-1)*100)}% guests` : "";
+      html += `<div class="card${on ? " on" : ""}"><span class="cico">${p.icon}</span>
+        <div class="cmain"><div class="ct">${p.name} ${on ? "✅" : ""}</div>
+          <div class="cd">${p.tip}<br>${money}${att}</div></div>
+        <span class="cbtn ${on ? "danger" : ""}" onclick="togglePartner('${key}')">${on ? "End deal" : "Sign"}</span></div>`;
+    }
+    m.innerHTML = html;
+  } else if (manageTab === "ledger") {
+    const L = game.ledger;
+    const incLabels = { admissions:"🎫 Admissions", rides:"🎢 Ride tickets", shops:"🛒 Shops & food", photos:"📸 Photos", partners:"🤝 Partner payouts", refunds:"♻️ Demolition refunds" };
+    const expLabels = { construction:"🏗️ Construction", upkeep:"🔧 Upkeep & wages", staff:"👷 Staff hiring", marketing:"📣 Marketing & deals" };
+    const totIn = Object.values(L.income).reduce((a,b)=>a+b,0);
+    const totOut = Object.values(L.expense).reduce((a,b)=>a+b,0);
+    const net = totIn - totOut;
+    const rowsFor = (obj, labels) => Object.keys(labels).map(k =>
+      `<div class="kv"><span>${labels[k]}</span><b>${fmtMoney(obj[k]||0)}</b></div>`).join("");
+    m.innerHTML = `<span class="mclose" onclick="closeModal()">✕</span>
+      <h2>💰 Ledger</h2>
+      <div class="modal-sub">Lifetime profit &amp; loss for this park. Current balance: <b>${fmtMoney(game.cash)}</b></div>
+      <div class="ledger-cols">
+        <div class="ledger-col income">
+          <h3 class="sect">Income</h3>${rowsFor(L.income, incLabels)}
+          <div class="kv total"><span>Total income</span><b>${fmtMoney(totIn)}</b></div>
+        </div>
+        <div class="ledger-col expense">
+          <h3 class="sect">Expenses</h3>${rowsFor(L.expense, expLabels)}
+          <div class="kv total"><span>Total expenses</span><b>${fmtMoney(totOut)}</b></div>
+        </div>
+      </div>
+      <div class="kv net ${net>=0?"pos":"neg"}"><span>📈 Net profit</span><b>${fmtMoney(net)}</b></div>`;
+  }
+}
+function firstStaffId(type) { const s = game.staff.find(x => x.type === type); return s ? s.id : -1; }
+window.openManage = openManage;
+window.closeModal = closeModal;
+window.hireStaff = hireStaff;
+window.fireStaff = fireStaff;
+window.startCampaign = startCampaign;
+window.togglePartner = togglePartner;
+
+/* ----------------------------------------------------------------------------
+   13. SAVE / LOAD
+---------------------------------------------------------------------------- */
+const SAVE_KEY = "rct_mini_save_v2";
+function save() {
+  const plain = {
+    cash: game.cash, tiles: game.tiles, entrance: game.entrance,
+    rating: game.rating, minutes: game.minutes, day: game.day,
+    nextGuestId: game.nextGuestId, speed: game.speed, tool: game.tool,
+    admitted: game.admitted, level: game.level,
+    nextStaffId: game.nextStaffId, campaign: game.campaign, partners: game.partners, ledger: game.ledger,
+    weather: game.weather, reputation: game.reputation, news: game.news,
+    nextGroupId: game.nextGroupId, dayStartCash: game.dayStartCash,
+    staff: game.staff.map(s => ({ id: s.id, type: s.type, r: s.r, c: s.c, x: s.x, y: s.y })),
+    rides: game.rides.map(s => ({ key: s.key, r: s.r, c: s.c, served: s.served, price: s.price, novelty: s.novelty, condition: s.condition })),
+    guests: game.guests.map(g => ({
+      id: g.id, name: g.name, age: g.age, vip: g.vip, title: g.title, groupId: g.groupId,
+      r: g.r, c: g.c, x: g.x, y: g.y, tx: g.tx, ty: g.ty, color: g.color,
+      money: g.money, happiness: g.happiness, hunger: g.hunger, thirst: g.thirst,
+      energy: g.energy, bladder: g.bladder, nausea: g.nausea, thrillPref: g.thrillPref,
+      ridesTaken: g.ridesTaken, spent: g.spent,
+    })),
+  };
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(plain)); toast("💾 Park saved"); }
+  catch (e) { toast("Save failed: " + e.message); }
+}
+function load() {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (!raw) { toast("No saved park found"); return; }
+  try {
+    const d = JSON.parse(raw);
+    game = newGame();
+    Object.assign(game, {
+      cash: d.cash, tiles: d.tiles, entrance: d.entrance, rating: d.rating,
+      minutes: d.minutes, day: d.day, nextGuestId: d.nextGuestId,
+      speed: d.speed ?? 1, tool: isUnlocked(d.tool ?? "path") ? (d.tool ?? "path") : "path",
+      admitted: d.admitted || 0, level: d.level || 1,
+      nextStaffId: d.nextStaffId || 1, campaign: d.campaign || null, partners: d.partners || {},
+      ledger: Object.assign(newLedger(), d.ledger || {}),
+      weather: d.weather || { type: "sunny", t: 800 },
+      reputation: d.reputation ?? 4.0, news: d.news || [],
+      nextGroupId: d.nextGroupId || 1, dayStartCash: d.dayStartCash ?? d.cash,
+    });
+    game.staff = (d.staff || []).map(s => {
+      const p = tileCenter(s.r, s.c);
+      return { id: s.id, type: s.type, def: STAFF_TYPES[s.type], r: s.r, c: s.c,
+        x: s.x ?? p.x, y: s.y ?? p.y, tx: s.x ?? p.x, ty: s.y ?? p.y,
+        target: null, busyT: 0, phase: Math.random() * Math.PI * 2 };
+    });
+    game.rides = d.rides.map(s => {
+      const svc = makeService(s.key, s.r, s.c);
+      svc.served = s.served || 0; svc.price = s.price ?? svc.def.price; svc.novelty = s.novelty ?? 100;
+      svc.condition = s.condition ?? 100;
+      return svc;
+    });
+    game.guests = d.guests.map(g => ({
+      ...g, state: "idle", target: null, entry: null, useTimer: 0, paidEntry: true, stuck: false,
+      name: g.name || "Guest", age: g.age || "adult", vip: !!g.vip, title: g.title || null, groupId: g.groupId || 0,
+      bladder: g.bladder || 0, nausea: g.nausea || 0, thrillPref: g.thrillPref ?? rand(2, 9),
+      spent: g.spent || 0, phase: Math.random()*Math.PI*2, emote: null, emoteT: 0,
+      carryTrash: 0, crowd: 0, dirty: 0, ateT: 0, rodeT: 0, attire: pickAttire(),
+    }));
+    invalidatePaths(); refreshServiceEntries();
+    buildToolbar(); setTool(game.tool); setSpeed(game.speed);
+    particles = []; closeInspector();
+    toast("📂 Park loaded");
+  } catch (e) { toast("Load failed: " + e.message); }
+}
+
+/* ----------------------------------------------------------------------------
+   14. UI WIRING + BOOT
+---------------------------------------------------------------------------- */
+function buildToolbar() {
+  const wrap = document.getElementById("tools");
+  wrap.innerHTML = "";
+  for (const grp of TOOL_GROUPS) {
+    const h = document.createElement("h2"); h.textContent = grp.title; wrap.appendChild(h);
+    for (const key of grp.keys) {
+      const def = BUILDINGS[key];
+      const locked = !isUnlocked(key);
+      const el = document.createElement("div");
+      el.className = "tool" + (key === game.tool ? " active" : "") + (locked ? " locked" : "");
+      el.dataset.tool = key;
+      const sizeTxt = (def.w > 1 || def.h > 1) ? `<span class="sz">${def.w}×${def.h}</span>` : "";
+      const meta = locked ? `🔒 Lv${def.level}` : (key === "bulldoze" ? "refund" : "$" + def.cost);
+      el.innerHTML = `<span class="ico">${def.icon}</span><span>${def.name}</span>${sizeTxt}<span class="meta">${meta}</span>`;
+      el.addEventListener("click", () => setTool(key));
+      el.addEventListener("mouseenter", e => showTip(e, def, locked));
+      el.addEventListener("mouseleave", hideTip);
+      wrap.appendChild(el);
+    }
+  }
+}
+function showTip(ev, def, locked) {
+  const tip = document.getElementById("tooltip");
+  let txt = def.tip;
+  if (def.kind === T.RIDE) txt += `\n🎉 Excite ${def.excite} · ⚡ Intensity ${def.intensity} · 🤢 Nausea ${def.nausea}\n💵 $${def.price} · 🔧 $${def.upkeep}/hr · ${def.w}×${def.h} tiles`;
+  else if (def.kind === T.SHOP) txt += `\n💵 $${def.price} · 🔧 $${def.upkeep}/hr`;
+  if (locked) txt += `\n🔒 Unlocks at Level ${def.level}`;
+  tip.textContent = txt; tip.style.display = "block";
+  tip.style.left = "206px"; tip.style.top = clamp(ev.clientY - 30, 8, window.innerHeight - 140) + "px";
+}
+function hideTip() { document.getElementById("tooltip").style.display = "none"; }
+
+function setSpeed(s) {
+  game.speed = s;
+  document.querySelectorAll(".spd[data-speed]").forEach(b => b.classList.toggle("active", +b.dataset.speed === s));
+}
+
+function wireInput() {
+  function guestAt(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    let best = null, bd = 10;
+    for (const g of game.guests) { const d = Math.hypot(g.x - x, g.y - y); if (d < bd) { bd = d; best = g; } }
+    return best;
+  }
+  canvas.addEventListener("mousedown", e => {
+    if (e.button !== 0) return;
+    initAudio();
+    const { r, c } = screenToTile(e);
+    if (game.tool === "bulldoze") { dragging = true; placeTool(r, c); lastBuilt = key4(r, c); return; }
+    const g = guestAt(e); if (g) { selectGuest(g); return; }
+    const s = serviceCovering(r, c); if (s) { selectService(s); return; }
+    if (canPlace(r, c, BUILDINGS[game.tool])) {
+      closeInspector();
+      // Only paths & scenery drag-build; rides/shops place one per click.
+      dragging = BUILDINGS[game.tool].kind === T.PATH || BUILDINGS[game.tool].kind === T.SCENERY;
+      placeTool(r, c); lastBuilt = key4(r, c);
+    }
+  });
+  window.addEventListener("mouseup", () => { dragging = false; lastBuilt = null; });
+  canvas.addEventListener("mousemove", e => {
+    const { r, c } = screenToTile(e); hover.r = r; hover.c = c;
+    if (!dragging) return;
+    const k = key4(r, c); if (k !== lastBuilt) { placeTool(r, c); lastBuilt = k; }
+  });
+  canvas.addEventListener("mouseleave", () => { hover.r = -1; hover.c = -1; });
+  canvas.addEventListener("contextmenu", e => { e.preventDefault(); initAudio(); const { r, c } = screenToTile(e); bulldoze(r, c); });
+
+  // ---- pan & zoom the big map ----
+  let panning = false, panStart = null;
+  canvas.addEventListener("mousedown", e => {
+    if (e.button === 1) { e.preventDefault(); panning = true; panStart = { x: e.clientX, y: e.clientY, px: view.panX, py: view.panY }; }
+  });
+  window.addEventListener("mousemove", e => {
+    if (panning && panStart) { view.panX = panStart.px + (e.clientX - panStart.x); view.panY = panStart.py + (e.clientY - panStart.y); applyView(); }
+  });
+  window.addEventListener("mouseup", e => { if (e.button === 1) panning = false; });
+  canvas.addEventListener("wheel", e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.12 : 0.89); }, { passive: false });
+
+  // ---- touch: 1-finger drag = pan, 2-finger = pinch-zoom, quick tap = build/inspect ----
+  let touchMode = null, tStart = null, pinch = null;
+  const pinchInfo = e => { const a = e.touches[0], b = e.touches[1]; return { dist: Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY), cx: (a.clientX + b.clientX) / 2, cy: (a.clientY + b.clientY) / 2 }; };
+  function handleTap(x, y) {
+    const ev = { clientX: x, clientY: y }, { r, c } = screenToTile(ev);
+    if (game.tool === "bulldoze") { placeTool(r, c); return; }
+    const g = guestAt(ev); if (g) { selectGuest(g); return; }
+    const s = serviceCovering(r, c); if (s) { selectService(s); return; }
+    if (canPlace(r, c, BUILDINGS[game.tool])) { closeInspector(); placeTool(r, c); }
+  }
+  canvas.addEventListener("touchstart", e => {
+    e.preventDefault(); initAudio();
+    if (e.touches.length === 1) { const t = e.touches[0]; tStart = { x: t.clientX, y: t.clientY, px: view.panX, py: view.panY, moved: false }; touchMode = "tap"; }
+    else if (e.touches.length === 2) { touchMode = "pinch"; pinch = pinchInfo(e); }
+  }, { passive: false });
+  canvas.addEventListener("touchmove", e => {
+    e.preventDefault();
+    if (touchMode === "pinch" && e.touches.length === 2) { const pi = pinchInfo(e); zoomAt(pi.cx, pi.cy, pi.dist / pinch.dist); pinch = pi; }
+    else if (e.touches.length === 1 && tStart) {
+      const t = e.touches[0], dx = t.clientX - tStart.x, dy = t.clientY - tStart.y;
+      if (!tStart.moved && Math.hypot(dx, dy) > 9) { tStart.moved = true; touchMode = "pan"; }
+      if (touchMode === "pan") { view.panX = tStart.px + dx; view.panY = tStart.py + dy; applyView(); }
+    }
+  }, { passive: false });
+  canvas.addEventListener("touchend", e => {
+    e.preventDefault();
+    if (touchMode === "tap" && tStart && !tStart.moved) handleTap(tStart.x, tStart.y);
+    if (e.touches.length === 0) { touchMode = null; tStart = null; pinch = null; }
+    else if (e.touches.length === 1) { const t = e.touches[0]; tStart = { x: t.clientX, y: t.clientY, px: view.panX, py: view.panY, moved: true }; touchMode = "pan"; }
+  }, { passive: false });
+
+  // on-screen zoom buttons (work with mouse & touch)
+  const zoomCenter = factor => { const rc = document.getElementById("canvas-wrap").getBoundingClientRect(); zoomAt(rc.left + rc.width / 2, rc.top + rc.height / 2, factor); };
+  document.getElementById("zoom-in").addEventListener("click", () => zoomCenter(1.25));
+  document.getElementById("zoom-out").addEventListener("click", () => zoomCenter(0.8));
+  document.getElementById("zoom-fit").addEventListener("click", fitView);
+  document.getElementById("panels-btn").addEventListener("click", () => document.body.classList.toggle("show-panels"));
+  const rx = document.getElementById("rotate-x"); if (rx) rx.addEventListener("click", () => { document.getElementById("rotate-hint").style.display = "none"; });
+  window.addEventListener("orientationchange", () => setTimeout(fitView, 350));
+
+  document.getElementById("sound-btn").addEventListener("click", () => {
+    soundOn = !soundOn; const b = document.getElementById("sound-btn");
+    b.textContent = soundOn ? "🔊" : "🔇"; b.classList.toggle("muted", !soundOn);
+    if (soundOn) { initAudio(); sfx("select"); }
+  });
+  document.querySelectorAll(".spd[data-speed]").forEach(b => b.addEventListener("click", () => { initAudio(); setSpeed(+b.dataset.speed); }));
+  document.getElementById("save-btn").addEventListener("click", save);
+  document.getElementById("load-btn").addEventListener("click", load);
+  document.getElementById("reset-btn").addEventListener("click", () => {
+    if (confirm("Start a brand new park? Current progress will be lost.")) {
+      game = newGame(); invalidatePaths(); cheatLevel = 0; freeBuild = false;
+      buildToolbar(); setTool("path"); setSpeed(1); particles = []; closeInspector(); closeModal(); toast("🎡 New park!");
+    }
+  });
+  document.getElementById("cheat-btn").addEventListener("click", () => toggleCheats());
+  document.getElementById("staff-btn").addEventListener("click", () => { initAudio(); openManage("staff"); });
+  document.getElementById("marketing-btn").addEventListener("click", () => { initAudio(); openManage("marketing"); });
+  document.getElementById("ledger-btn").addEventListener("click", () => { initAudio(); openManage("ledger"); });
+  document.getElementById("cash-stat").addEventListener("click", () => { initAudio(); openManage("ledger"); });
+  // emotions legend collapse toggle
+  document.getElementById("legend-head").addEventListener("click", () => document.getElementById("legend").classList.toggle("collapsed"));
+  document.getElementById("moods-head").addEventListener("click", () => document.getElementById("moods").classList.toggle("collapsed"));
+  document.getElementById("advisor-head").addEventListener("click", () => document.getElementById("advisor").classList.toggle("collapsed"));
+  // click the dark backdrop (outside the card) to close the modal
+  document.getElementById("modal-overlay").addEventListener("mousedown", e => { if (e.target.id === "modal-overlay") closeModal(); });
+
+  const ci = document.getElementById("cheat-input");
+  ci.addEventListener("keydown", e => {
+    if (e.key === "Enter") { runCheat(ci.value); ci.value = ""; }
+    if (e.key === "Escape" || e.key === "~") { toggleCheats(false); }
+  });
+  window.addEventListener("keydown", e => {
+    if (document.activeElement === ci) return;
+    initAudio();
+    if (e.key === "~" || e.key === "`") { e.preventDefault(); toggleCheats(); return; }
+    if (e.key === "Escape") { closeModal(); closeInspector(); return; }
+    if (e.key === " ") { e.preventDefault(); setSpeed(game.speed === 0 ? 1 : 0); }
+    if (e.key === "1") setSpeed(1);
+    if (e.key === "2") setSpeed(2);
+    if (e.key === "5" && unlockedSpeed5) setSpeed(5);
+    if (e.key === "b") setTool("bulldoze");
+    if (e.key === "p") setTool("path");
+    // camera: arrow keys pan, F fits the whole park, +/- zoom
+    const PAN = 70;
+    if (e.key === "ArrowLeft")  { view.panX += PAN; applyView(); }
+    if (e.key === "ArrowRight") { view.panX -= PAN; applyView(); }
+    if (e.key === "ArrowUp")    { view.panY += PAN; applyView(); }
+    if (e.key === "ArrowDown")  { view.panY -= PAN; applyView(); }
+    if (e.key === "f" || e.key === "F") fitView();
+    if (e.key === "+" || e.key === "=") zoomAt(window.innerWidth/2, window.innerHeight/2, 1.15);
+    if (e.key === "-" || e.key === "_") zoomAt(window.innerWidth/2, window.innerHeight/2, 0.87);
+  });
+}
+
+function scheduleFireworks(rdt) {
+  if (game.speed === 0 || darkness() < 0.4 || game.guests.length < 5) return;
+  fireworkTimer -= rdt;
+  if (fireworkTimer <= 0) { fireworkTimer = rand(1.0, 2.8); launchFirework(); }
+}
+
+function loop(now) {
+  if (!last) last = now;
+  let dt = now - last; last = now;
+  if (dt > 250) dt = 250;
+  acc += dt * game.speed;
+  let safety = 0;
+  while (acc >= TICK_MS && safety < 240) { step(1); acc -= TICK_MS; safety++; }
+
+  const rdt = Math.min((now - lastRender) / 1000 || 0, 0.05);
+  lastRender = now; animT += rdt;
+  updateParticles(rdt);
+  for (const g of game.guests) if (g.emoteT > 0) g.emoteT -= rdt;
+  scheduleFireworks(rdt);
+  if (weatherDef().rain && game.speed > 0) {
+    const heavy = game.weather.type === "storm" ? 9 : 4;
+    for (let i = 0; i < heavy; i++) particles.push({ kind:"rain", x: rand(0, canvas.width), y: rand(-30, 0), vx: game.weather.type==="storm"?-70:-30, vy: rand(450, 700), life: rand(0.7, 1.2), max: 1.2, color:"#9cc7ff" });
+  }
+  if (game.flashT > 0) game.flashT -= rdt;
+  if (game.speed > 0) campaignTick(rdt);   // ad campaigns count down on real time while running
+
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ----------------------------------------------------------------------------
+   PRIVACY — geo-aware analytics consent
+   Outside the EU/EEA/UK: analytics ON by default, with a one-tap opt-out.
+   Inside the EU/EEA/UK: analytics OFF until the visitor opts in (banner).
+   Either way, the 🍪 button reopens the choice at any time.
+---------------------------------------------------------------------------- */
+const GA_ID = "G-XHHXS8SEZ8";
+const CONSENT_REGIONS = new Set("AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE IS LI NO GB CH".split(" "));
+function showConsentBanner() { const e = document.getElementById("consent"); if (e) e.style.display = "flex"; }
+function setConsent(val) {
+  try { localStorage.setItem("ua_consent", val); } catch (e) {}
+  if (val === "yes") { window["ga-disable-" + GA_ID] = false; if (window.loadGA) window.loadGA(); }
+  else { window["ga-disable-" + GA_ID] = true; }    // honour opt-out even if GA already loaded
+  const el = document.getElementById("consent"); if (el) el.style.display = "none";
+}
+// True if the visitor is in a region that legally needs opt-in consent.
+async function regionNeedsConsent() {
+  let cc = null;
+  try {
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 2500);
+    const r = await fetch("https://api.country.is/", { signal: ctl.signal });
+    clearTimeout(to); if (r.ok) cc = (await r.json()).country;
+  } catch (e) {}
+  if (!cc) {   // geo lookup failed → fall back to the browser's timezone
+    try { if ((Intl.DateTimeFormat().resolvedOptions().timeZone || "").indexOf("Europe/") === 0) return true; } catch (e) {}
+    return false;
+  }
+  return CONSENT_REGIONS.has(cc);
+}
+async function initConsent() {
+  let stored = null; try { stored = localStorage.getItem("ua_consent"); } catch (e) {}
+  if (stored === "yes") { window["ga-disable-" + GA_ID] = false; if (window.loadGA) window.loadGA(); return; }
+  if (stored === "no") { window["ga-disable-" + GA_ID] = true; return; }
+  // no decision yet → region decides the default
+  if (await regionNeedsConsent()) showConsentBanner();   // EU/EEA/UK: ask first
+  else setConsent("yes");                                 // rest of world: on by default (opt-out)
+}
+
+function boot() {
+  canvas = document.getElementById("game");
+  ctx = canvas.getContext("2d");
+  game = newGame();
+  resize();
+  fitView();
+  window.addEventListener("resize", fitView);
+  buildToolbar();
+  wireInput();
+  setTool("path");
+  const touch = window.matchMedia && matchMedia("(pointer: coarse)").matches;
+  if (touch) {
+    document.body.classList.add("mobile");
+    document.getElementById("advisor").classList.add("collapsed");
+    toast("📱 Bottom bar = build · drag to pan · pinch to zoom · 📊 toggles panels", true);
+    setTimeout(fitView, 100);
+  }
+  toast("🌈 Welcome to your Utopian Adventure Park! Build paths from the 🎪 entrance, then add adventures. Grow the park to unlock more!", true);
+  // privacy: geo-aware analytics consent — on by default (opt-out) outside the
+  // EU/EEA/UK, opt-in banner inside it; manage anytime via the 🍪 button.
+  document.getElementById("consent-yes").addEventListener("click", () => setConsent("yes"));
+  document.getElementById("consent-no").addEventListener("click", () => setConsent("no"));
+  document.getElementById("cookie-btn").addEventListener("click", showConsentBanner);
+  initConsent();
+  requestAnimationFrame(loop);
+}
+boot();
+</script>
+</body>
+</html>
