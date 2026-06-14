@@ -352,6 +352,7 @@
   body.mobile #zoom-controls { bottom: 96px; }
   #panels-btn { display: flex; }
   body.panels-off #panels-btn { background: #4f7dff; }
+  #emote-btn.off { opacity: .5; }
 
   /* cookie-consent banner */
   #consent {
@@ -461,6 +462,7 @@
         <span style="opacity:.7">ℹ️ Anonymous Google Analytics (opt out via 🍪) · your park saves stay on your device.</span>
       </div>
       <div id="zoom-controls">
+        <button id="emote-btn" title="Show / hide guest mood emojis on the map">😀</button>
         <button id="panels-btn" title="Show / hide info panels (Moods, Advisor, Legend)">📊</button>
         <button id="zoom-in" title="Zoom in">＋</button>
         <button id="zoom-out" title="Zoom out">－</button>
@@ -644,6 +646,7 @@ let lastMoneySfx = 0;
 let ledgerT = 0;        // throttles live ledger refresh while the panel is open
 let moodsT = 0;         // throttles the live guest-moods dashboard refresh
 let advisorT = 0;       // throttles the advisor hint refresh
+let showEmotes = true;  // draw mood emoji bubbles above guests on the map
 
 function newGame() {
   const tiles = [];
@@ -1961,7 +1964,7 @@ function render() {
     // seasonal attire (umbrella, sunhat, scarf…) sits beside the guest
     if (g.attire) drawGlyph(g.attire, g.x + 6, gy - 5, 11);
     if (g.vip) { ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(g.x, gy, 7, 0, Math.PI*2); ctx.stroke(); drawGlyph("⭐", g.x - 6, gy - 7, 11); }
-    if (g.emote && g.emoteT > 0 && emotesDrawn < 65) { emotesDrawn++; drawGlyph(g.emote, g.x, gy - 13, 13); }
+    if (showEmotes && g.emote && g.emoteT > 0 && emotesDrawn < 65) { emotesDrawn++; drawGlyph(g.emote, g.x, gy - 13, 13); }
   }
 
   // staff (icon discs that patrol the paths)
@@ -2562,6 +2565,11 @@ function wireInput() {
   document.getElementById("zoom-out").addEventListener("click", () => zoomCenter(0.8));
   document.getElementById("zoom-fit").addEventListener("click", fitView);
   document.getElementById("panels-btn").addEventListener("click", () => document.body.classList.toggle("panels-off"));
+  document.getElementById("emote-btn").addEventListener("click", () => {
+    showEmotes = !showEmotes;
+    const b = document.getElementById("emote-btn");
+    b.textContent = showEmotes ? "😀" : "😶"; b.classList.toggle("off", !showEmotes);
+  });
   const rx = document.getElementById("rotate-x"); if (rx) rx.addEventListener("click", () => { document.getElementById("rotate-hint").style.display = "none"; });
   window.addEventListener("orientationchange", () => setTimeout(fitView, 350));
 
