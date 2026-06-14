@@ -346,11 +346,12 @@
   body.mobile .tool .meta, body.mobile .tool .sz { display: none; }
   body.mobile #hud { height: auto; flex-wrap: wrap; gap: 4px 10px; padding: 5px 8px; }
   body.mobile #ticker, body.mobile #help { display: none; }
-  body.mobile #side-panels { display: none; }
-  body.mobile.show-panels #side-panels { display: flex; max-height: calc(100% - 130px); }
+  /* 📊 toggles the whole info-panel stack off/on — available on every device */
+  body.panels-off #side-panels { display: none; }
+  body.mobile #side-panels { max-height: calc(100% - 130px); }
   body.mobile #zoom-controls { bottom: 96px; }
-  #panels-btn { display: none; }
-  body.mobile #panels-btn { display: flex; }
+  #panels-btn { display: flex; }
+  body.panels-off #panels-btn { background: #4f7dff; }
 
   /* cookie-consent banner */
   #consent {
@@ -460,7 +461,7 @@
         <span style="opacity:.7">ℹ️ Anonymous Google Analytics (opt out via 🍪) · your park saves stay on your device.</span>
       </div>
       <div id="zoom-controls">
-        <button id="panels-btn" title="Toggle info panels">📊</button>
+        <button id="panels-btn" title="Show / hide info panels (Moods, Advisor, Legend)">📊</button>
         <button id="zoom-in" title="Zoom in">＋</button>
         <button id="zoom-out" title="Zoom out">－</button>
         <button id="zoom-fit" title="Fit park">⤢</button>
@@ -2560,7 +2561,7 @@ function wireInput() {
   document.getElementById("zoom-in").addEventListener("click", () => zoomCenter(1.25));
   document.getElementById("zoom-out").addEventListener("click", () => zoomCenter(0.8));
   document.getElementById("zoom-fit").addEventListener("click", fitView);
-  document.getElementById("panels-btn").addEventListener("click", () => document.body.classList.toggle("show-panels"));
+  document.getElementById("panels-btn").addEventListener("click", () => document.body.classList.toggle("panels-off"));
   const rx = document.getElementById("rotate-x"); if (rx) rx.addEventListener("click", () => { document.getElementById("rotate-hint").style.display = "none"; });
   window.addEventListener("orientationchange", () => setTimeout(fitView, 350));
 
@@ -2698,7 +2699,7 @@ function boot() {
   setTool("path");
   const touch = window.matchMedia && matchMedia("(pointer: coarse)").matches;
   if (touch) {
-    document.body.classList.add("mobile");
+    document.body.classList.add("mobile", "panels-off");   // phones start with panels hidden; 📊 shows them
     document.getElementById("advisor").classList.add("collapsed");
     toast("📱 Bottom bar = build · drag to pan · pinch to zoom · 📊 toggles panels", true);
     setTimeout(fitView, 100);
